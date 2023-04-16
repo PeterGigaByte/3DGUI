@@ -1,6 +1,8 @@
-import math
-
 import vtk
+
+
+def normalize_rgb(rgb):
+    return tuple(channel / 255.0 for channel in rgb)
 
 
 class EnvironmentRenderingApi:
@@ -45,7 +47,7 @@ class EnvironmentRenderingApi:
         self.buildings.append(cube_actor)
         self.renderer.AddActor(cube_actor)
 
-    def create_node(self, x, y, z, radius=1):
+    def create_node(self, x, y, z, radius=1, description="Node", node_color=(255, 0, 0), label_color=(255, 255, 255)):
         """Create a node at the specified location."""
         sphere = vtk.vtkSphereSource()
         sphere.SetRadius(radius)
@@ -58,37 +60,39 @@ class EnvironmentRenderingApi:
 
         sphere_actor = vtk.vtkActor()
         sphere_actor.SetMapper(sphere_mapper)
-        sphere_actor.GetProperty().SetColor(1, 0, 0)
+        sphere_actor.GetProperty().SetColor(*normalize_rgb(node_color))
 
-        self.nodes.append(sphere_actor)
+        # Create a text label
+        text_source = vtk.vtkVectorText()
+        text_source.SetText(f"{description}\n({x}, {y}, {z})")
+
+        text_mapper = vtk.vtkPolyDataMapper()
+        text_mapper.SetInputConnection(text_source.GetOutputPort())
+
+        text_actor = vtk.vtkFollower()
+        text_actor.SetMapper(text_mapper)
+        text_actor.GetProperty().SetColor(*normalize_rgb(label_color))  # Normalize the label color
+        text_actor.SetScale(0.5)  # Set the scale of the text
+        text_actor.SetPosition(x, y - 2.5 * radius, z)  # Adjust the position based on your object
+        text_actor.SetCamera(self.renderer.GetActiveCamera())  # Set the camera for the vtkFollower
+
+        self.nodes.append((sphere_actor, text_actor))
         self.renderer.AddActor(sphere_actor)
+        self.renderer.AddActor(text_actor)
 
-    def create_arrow(self, start, end):
-        """Create an arrow from start to end."""
-        arrow = vtk.vtkArrowSource()
-        arrow.Update()
+    def clear_vtk_window(self):
+        # Remove all actors from the renderer
+        for node in self.nodes:
+            sphere_actor, text_actor = node
+            self.renderer.RemoveActor(sphere_actor)
+            self.renderer.RemoveActor(text_actor)
 
-        arrow_mapper = vtk.vtkPolyDataMapper()
-        arrow_mapper.SetInputConnection(arrow.GetOutputPort())
+        # Clear the list of nodes
+        self.nodes = []
 
-        arrow_actor = vtk.vtkActor()
-        arrow_actor.SetMapper(arrow_mapper)
-        arrow_actor.GetProperty().SetColor(0, 0, 1)
+        # Update the render window
+        self.renderer.GetRenderWindow().Render()
 
-        direction = [end[i] - start[i] for i in range(3)]
-        length = math.sqrt(sum([i ** 2 for i in direction]))
-
-        # Set the position of the arrow at the start point of the line
-        arrow_actor.SetPosition(start)
-
-        # Calculate the direction and orientation of the arrow
-        arrow_actor.RotateWXYZ(math.degrees(math.atan2(math.sqrt(direction[0] ** 2 + direction[1] ** 2), direction[2])),
-                               direction[0], direction[1], 0)
-        arrow_actor.RotateWXYZ(math.degrees(math.atan2(direction[1], direction[0])), 0, 0, 1)
-
-        arrow_actor.SetScale(length)
-
-        self.renderer.AddActor(arrow_actor)
 
     def setup_renderer(self):
         """Set up the renderer for the visualization."""
@@ -103,14 +107,12 @@ class EnvironmentRenderingApi:
         return self.renderer
 
     def test_view(self):
-        """Switch to the visualizing view."""
+        """Create the test visualizing view."""
         self.renderer.SetBackground(0.5, 0.5, 1)
         self.create_ground()
-        self.create_building(-100, -100, 0, 50, 100)
-        self.create_building(100, 100, 0, 50, 100)
-        self.create_node(0, 0, 10)
-        self.create_node(-50, 50, 10)
-        self.create_node(50, -50, 10)
-        self.create_arrow((-50, 50, 10), (50, -50, 10))
-        self.create_arrow((50, -50, 10), (-50, 50, 10))
+        #self.create_building(-100, -100, 0, 50, 100)
+        #self.create_building(100, 100, 0, 50, 100)
+        #self.create_node(0, 0, 10)
+        #self.create_node(-50, 50, 10)
+        #self.create_node(50, -50, 10)
         self.renderer.Render()

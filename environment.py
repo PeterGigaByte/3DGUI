@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QMenu, QFrame, QVBoxLayout, QFileDialog, QStackedWidget, QLabel
 )
 
+from api.animation import AnimationApi
 from api.parser import ParserAPI
 from api.rendering import EnvironmentRenderingApi
 from components.dock_widgets.bottom_dock_widget import BottomDockWidget
@@ -12,8 +13,8 @@ from components.frames.bottom import BottomFrame
 from components.frames.control import ControlFrame
 from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
-from parsers.json_parser import JSONParser
-from parsers.xml_parser import XMLParser
+
+from parsers.xml.tree_element import ElementTreeXMLParser
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
 
@@ -34,12 +35,16 @@ class Environment(QMainWindow):
 
         # Initialize ParserAPI and register parsers
         self.parser_api = ParserAPI()
-        self.parser_api.register_parser('xml', XMLParser())
-        self.parser_api.register_parser('json', JSONParser())
+        self.parser_api.register_parser('xml', ElementTreeXMLParser(bottom_dock_widget=self.bottom_dock_widget))
+        # self.parser_api.register_parser('xml', DOMXMLParser())
+        # self.parser_api.register_parser('json', JSONParser())
 
         # Initialize EnvironmentRenderingApi
         self.vtk_api = EnvironmentRenderingApi()
         self.renderer = self.vtk_api.get_renderer()
+
+        # Initialize AnimationAPI
+        self.animation_api = AnimationApi(self.vtk_api)
 
         self.interactor_style = CustomInteractorStyle()
 
@@ -118,7 +123,7 @@ class Environment(QMainWindow):
         layout.addWidget(QLabel("Visualisation view"))
 
         # Top control frame init
-        control_frame = ControlFrame(self)
+        control_frame = ControlFrame(vtk_api=self.vtk_api, bottom_dock_widget=self.bottom_dock_widget)
 
         # Left dock Widget frame init
         self.addDockWidget(Qt.LeftDockWidgetArea, self.left_dock_widget)
@@ -144,7 +149,7 @@ class Environment(QMainWindow):
         render_window.SetSize(1000, 800)
         render_window.SetWindowName("Environment Visualization")
 
-        self.vtk_api.test_view()  # Add this line here
+        self.vtk_api.test_view()  # Test view // remove
 
         self.interactor_style.SetCurrentRenderer(self.renderer)
         self.interactor.SetInteractorStyle(self.interactor_style)
@@ -159,15 +164,18 @@ class Environment(QMainWindow):
         """Open a file and process its contents."""
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Xml Files (*.xml);;Json "
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Xml Files (*.xml);;Json "
                                                                           "Files (*.json)",
                                                    options=options)
-        if file_name:
+        if file_path:
             # Here, you can add the code to read the file and process its contents.
             # For example, if the file contains data about nodes and buildings, you can parse the file
             # and create the corresponding nodes and buildings in your visualization.
             # 1. parse_file
+            self.bottom_dock_widget.log(f"File opened: {file_path}")
+            data = self.parser_api.parse_file(file_path)
+            self.animation_api.set_data(data)
+            self.animation_api.prepare_animation()
             # 2. remove everything on vtk window create nodes and building
             # 3. save logic
-            self.bottom_dock_widget.log(f"File opened: {file_name}")
             self.visualizing_view()
