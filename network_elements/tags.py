@@ -76,6 +76,7 @@ class NcsTags:
 class PTags:
     FROM_ID_TAG = 'fId'
     FB_TX_TAG = 'fbTx'
+    LB_TX_TAG = 'lbTx'
     META_INFO_TAG = 'meta_info'
     TO_ID_TAG = 'tId'
     FB_RX_TAG = 'fbRx'

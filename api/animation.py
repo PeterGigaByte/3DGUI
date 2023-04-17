@@ -1,14 +1,30 @@
-from network_elements.elements import Node, Nu
+import vtk
+
+from network_elements.elements import Node
 from utils.manage import get_objects_by_type
 
 
 class AnimationApi:
     def __init__(self, renderer_api):
+        self.timer_id = None
         self.renderer_api = renderer_api
         self.data = None
+        self.substeps = []
+        self.current_substep = 0
+        self.delay = 1000  # Animation delay in milliseconds
+        self.is_paused = False
+        self.control_update_callback = None
+        self.progress_bar_update_callback = None
+        self.progress_bar_maximum_callback = None
 
     def set_data(self, data):
         self.data = data
+
+    def set_control_update_callback(self, callback):
+        self.control_update_callback = callback
+
+    def set_substeps(self, substeps):
+        self.substeps = substeps
 
     def prepare_animation(self):
         nodes = get_objects_by_type(self.data.content, Node)
@@ -16,34 +32,46 @@ class AnimationApi:
             self.renderer_api.create_node(int(node.loc_x), int(node.loc_y), int(node.loc_z))
         self.renderer_api.renderer.GetRenderWindow().Render()
 
+    def animate_substeps(self):
+        interactor = self.renderer_api.renderer.GetRenderWindow().GetInteractor()
+        interactor.CreateRepeatingTimer(self.delay)
+        interactor.AddObserver(vtk.vtkCommand.TimerEvent, self.on_timer)
+        self.timer_id = interactor.CreateRepeatingTimer(self.delay)
 
-import xml.etree.ElementTree as ET
+    def on_timer(self, obj, event):
+        if not self.is_paused:
+            if self.current_substep < len(self.substeps):
+                substep = self.substeps[self.current_substep]
+                self.handle_step(substep)
+                self.current_substep += 1
 
-# Parse the XML data and extract the relevant attributes
-xml_str = '''
-<data>
-    <p fId="1" fbTx="1" lbTx="1.000067199" tId="0" fbRx="1.002" lbRx="1.002067199"/>
-    <p fId="2" fbTx="2" lbTx="2.000067199" tId="0" fbRx="2.002" lbRx="2.002067199"/>
-    <p fId="3" fbTx="3" lbTx="3.000067199" tId="0" fbRx="3.002" lbRx="3.002067199"/>
-</data>
-'''
+                # Call the callback function if set
+                if self.control_update_callback:
+                    self.control_update_callback(f"Step {self.current_substep} / {len(self.substeps)}", f"Time {substep['time']}", self.current_substep, len(self.substeps))
+            else:
+                # Stop the timer if there are no more substeps
+                obj.DestroyTimer()
 
-root = ET.fromstring(xml_str)
+    def handle_step(self, substep):
+        packet_id = substep['packetId']
+        if substep['stepN'] == 0:
+            x, y, z = substep['locX'], substep['locY'], substep['locZ']
+            self.renderer_api.create_packet(x, y, z, packet_id=packet_id)
+        elif substep['stepN'] == 19 and packet_id in self.renderer_api.packets:
+            if packet_id in self.renderer_api.packets:
+                self.renderer_api.remove_packet(packet_id)
+        # Update the position of the packet for intermediate steps
+        elif packet_id in self.renderer_api.packets:
+            x, y, z = substep['locX'], substep['locY'], substep['locZ']
+            self.renderer_api.update_packet_position(packet_id, x, y, z)
+            self.renderer_api.renderer.GetRenderWindow().Render()
 
-packet_data = []
+    def pause_animation(self):
+        self.is_paused = not self.is_paused
 
-for p in root.findall('p'):
-    packet_data.append({
-        'fId': p.get('fId'),
-        'fb_tx': float(p.get('fbTx')),
-        'lb_tx': float(p.get('lbTx')),
-        'fb_rx': float(p.get('fbRx')),
-        'lb_rx': float(p.get('lbRx')),
-    })
-
-
-
-
-
-
+    def update_delay(self, new_delay):
+        self.delay = new_delay
+        interactor = self.renderer_api.renderer.GetRenderWindow().GetInteractor()
+        interactor.DestroyTimer(self.timer_id)
+        self.timer_id = interactor.CreateRepeatingTimer(self.delay)
 

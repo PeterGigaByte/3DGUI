@@ -44,63 +44,64 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         x_direction /= direction_magnitude
         y_direction /= direction_magnitude
 
-        if event_key == Qt.Key_W:
-            # Move camera forward
-            position[0] += move_speed * x_direction
-            position[1] += move_speed * y_direction
-            focal_point[0] += move_speed * x_direction
-            focal_point[1] += move_speed * y_direction
-        elif event_key == Qt.Key_S:
-            # Move camera back
-            position[0] -= move_speed * x_direction
-            position[1] -= move_speed * y_direction
-            focal_point[0] -= move_speed * x_direction
-            focal_point[1] -= move_speed * y_direction
-        elif event_key == Qt.Key_D:
-            # Move camera to the right
-            position[0] += move_speed * y_direction
-            position[1] -= move_speed * x_direction
-            focal_point[0] += move_speed * y_direction
-            focal_point[1] -= move_speed * x_direction
-        elif event_key == Qt.Key_A:
-            # Move camera to the left
-            position[0] -= move_speed * y_direction
-            position[1] += move_speed * x_direction
-            focal_point[0] -= move_speed * y_direction
-            focal_point[1] += move_speed * x_direction
-        elif event_key == Qt.Key_Q:
-            # Rotate camera to the left xyz
-            camera.Roll(-rotation_speed)
-        elif event_key == Qt.Key_E:
-            # Rotate camera to the right xyz
-            camera.Roll(rotation_speed)
-        elif event_key == Qt.Key_Right:
-            # Rotate camera to the left
-            focal_point[0], focal_point[1] = calculate_focal_points_xy(focal_point, position, -10)
-        elif event_key == Qt.Key_Left:
-            # Rotate camera to the right
-            focal_point[0], focal_point[1] = calculate_focal_points_xy(focal_point, position, 10)
-        elif event_key == Qt.Key_Up:
-            # Rotate camera up
-            focal_point[0], focal_point[1], focal_point[2] = calculate_focal_points_xyz(focal_point, position, 10)
-        elif event_key == Qt.Key_Down:
-            # Rotate camera down
-            focal_point[0], focal_point[1], focal_point[2] = calculate_focal_points_xyz(focal_point, position, -10)
-        elif event_key == Qt.Key_U:
-            # Move camera up
-            position[2] += move_speed
-            focal_point[2] += move_speed
-        elif event_key == Qt.Key_I:
-            # Move camera down
-            position[2] -= move_speed
-            focal_point[2] -= move_speed
-        elif event_key == Qt.Key_R:
-            # Move camera position
-            camera.SetPosition(0, -500, 200)
-            camera.SetFocalPoint(0, 0, 0)
-            camera.SetViewUp(0, 0, 1)
-            camera.SetClippingRange(1, 1000)
-            update_camera_position = False
+        match event_key:
+            case Qt.Key_W:
+                # Move camera forward
+                position[0] += move_speed * x_direction
+                position[1] += move_speed * y_direction
+                focal_point[0] += move_speed * x_direction
+                focal_point[1] += move_speed * y_direction
+            case Qt.Key_S:
+                # Move camera back
+                position[0] -= move_speed * x_direction
+                position[1] -= move_speed * y_direction
+                focal_point[0] -= move_speed * x_direction
+                focal_point[1] -= move_speed * y_direction
+            case Qt.Key_D:
+                # Move camera to the right
+                position[0] += move_speed * y_direction
+                position[1] -= move_speed * x_direction
+                focal_point[0] += move_speed * y_direction
+                focal_point[1] -= move_speed * x_direction
+            case Qt.Key_A:
+                # Move camera to the left
+                position[0] -= move_speed * y_direction
+                position[1] += move_speed * x_direction
+                focal_point[0] -= move_speed * y_direction
+                focal_point[1] += move_speed * x_direction
+            case Qt.Key_Q:
+                # Rotate camera to the left xyz
+                camera.Roll(-rotation_speed)
+            case Qt.Key_E:
+                # Rotate camera to the right xyz
+                camera.Roll(rotation_speed)
+            case Qt.Key_Right:
+                # Rotate camera to the right
+                focal_point[0], focal_point[1] = calculate_focal_points_xy(focal_point, position, -10)
+            case Qt.Key_Left:
+                # Rotate camera to the right
+                focal_point[0], focal_point[1] = calculate_focal_points_xy(focal_point, position, 10)
+            case Qt.Key_Up:
+                # Rotate camera up
+                focal_point[0], focal_point[1], focal_point[2] = calculate_focal_points_xyz(focal_point, position, 10)
+            case Qt.Key_Down:
+                # Rotate camera down
+                focal_point[0], focal_point[1], focal_point[2] = calculate_focal_points_xyz(focal_point, position, -10)
+            case Qt.Key_U:
+                # Move camera up
+                position[2] += move_speed
+                focal_point[2] += move_speed
+            case Qt.Key_I:
+                # Move camera down
+                position[2] -= move_speed
+                focal_point[2] -= move_speed
+            case Qt.Key_R:
+                # Move camera position
+                camera.SetPosition(0, -500, 200)
+                camera.SetFocalPoint(0, 0, 0)
+                camera.SetViewUp(0, 0, 1)
+                camera.SetClippingRange(1, 1000)
+                update_camera_position = False
 
         if update_camera_position:
             camera.SetPosition(position)

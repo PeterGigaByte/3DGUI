@@ -15,6 +15,7 @@ from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
 
 from parsers.xml.tree_element import ElementTreeXMLParser
+from time_controller.step_processor import StepProcessor
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
 
@@ -43,6 +44,9 @@ class Environment(QMainWindow):
         self.vtk_api = EnvironmentRenderingApi()
         self.renderer = self.vtk_api.get_renderer()
 
+        # Initialize StepProcessor
+        self.step_processor = StepProcessor()
+
         # Initialize AnimationAPI
         self.animation_api = AnimationApi(self.vtk_api)
 
@@ -53,6 +57,9 @@ class Environment(QMainWindow):
 
         # Create menu and render window
         self.create_menu()
+
+        # initialize StepProcessor
+        self.step_processor = StepProcessor()
 
         # Initialize views
         self.visualizing_view_widget = self.create_visualizing_view()
@@ -123,7 +130,8 @@ class Environment(QMainWindow):
         layout.addWidget(QLabel("Visualisation view"))
 
         # Top control frame init
-        control_frame = ControlFrame(vtk_api=self.vtk_api, bottom_dock_widget=self.bottom_dock_widget)
+        control_frame = ControlFrame(vtk_api=self.vtk_api, animation_api=self.animation_api, bottom_dock_widget=self.bottom_dock_widget)
+        self.animation_api.set_control_update_callback(control_frame.update_status)
 
         # Left dock Widget frame init
         self.addDockWidget(Qt.LeftDockWidgetArea, self.left_dock_widget)
@@ -173,9 +181,11 @@ class Environment(QMainWindow):
             # and create the corresponding nodes and buildings in your visualization.
             # 1. parse_file
             self.bottom_dock_widget.log(f"File opened: {file_path}")
-            data = self.parser_api.parse_file(file_path)
-            self.animation_api.set_data(data)
+            self.animation_api.set_data(self.parser_api.parse_file(file_path))
+            # 2 prepare environment
             self.animation_api.prepare_animation()
+            # 3 process data and set to animation
+            self.animation_api.set_substeps(self.step_processor.process_steps(self.animation_api.data))
             # 2. remove everything on vtk window create nodes and building
             # 3. save logic
             self.visualizing_view()

@@ -1,6 +1,7 @@
 class ParserAPI:
     def __init__(self):
         self.parsers = {}
+        self.data = None
 
     def register_parser(self, file_type, parser):
         self.parsers[file_type] = parser
@@ -12,7 +13,8 @@ class ParserAPI:
             raise ValueError(f"No parser registered for file type: {file_type}")
 
         parser = self.parsers[file_type]
-        return parser.parse(file_path)
+        self.data = parser.parse(file_path)
+        return self.data
 
     @staticmethod
     def get_file_type(file_path):

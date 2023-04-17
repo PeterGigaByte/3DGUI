@@ -68,6 +68,7 @@ def parse_tag(selected_tag):
         case NetworkElementTags.P_TAG.value:
             return P(selected_tag.attrib.get(PTags.FROM_ID_TAG),
                      selected_tag.attrib.get(PTags.FB_TX_TAG),
+                     selected_tag.attrib.get(PTags.LB_TX_TAG),
                      selected_tag.attrib.get(PTags.META_INFO_TAG),
                      selected_tag.attrib.get(PTags.TO_ID_TAG),
                      selected_tag.attrib.get(PTags.FB_RX_TAG),
