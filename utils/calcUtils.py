@@ -21,14 +21,14 @@ def calculate_focal_points_xyz(focal_point, position, angle):
     dz = focal_point[2] - position[2]
 
     # Calculate the horizontal distance
-    hor_dist = math.sqrt(dx**2 + dy**2)
+    hor_dist = math.sqrt(dx ** 2 + dy ** 2)
 
     # Calculate the ÁM current inclination angle
     inclination = math.atan2(dz, hor_dist)
 
     # Update the inclination angle
     new_inclination = inclination + math.radians(angle)
-    new_inclination = max(min(new_inclination, math.pi/2 - 0.01), -math.pi/2 + 0.01)
+    new_inclination = max(min(new_inclination, math.pi / 2 - 0.01), -math.pi / 2 + 0.01)
 
     # Calculate the new vertical (z) distance
     new_dz = hor_dist * math.tan(new_inclination)
@@ -37,3 +37,15 @@ def calculate_focal_points_xyz(focal_point, position, angle):
     focal_point[2] = position[2] + new_dz
 
     return focal_point[0], focal_point[1], focal_point[2]
+
+
+def interpolate_coordinates_3D(src_coord, dst_coord, step, num_steps):
+    x_src, y_src, z_src = src_coord
+    x_dst, y_dst, z_dst = dst_coord
+    fraction = step / (num_steps - 1)
+
+    x_step = x_src + fraction * (x_dst - x_src)
+    y_step = y_src + fraction * (y_dst - y_src)
+    z_step = z_src + fraction * (z_dst - z_src)
+
+    return x_step, y_step, z_step

@@ -2,8 +2,6 @@ import uuid
 
 import vtk
 
-from utils.renderingUtils import normalize_rgb
-
 
 class Building:
     def __init__(self, x, y, z, width, height, cube_color=(0.5, 0.5, 0.5), building_id=None):

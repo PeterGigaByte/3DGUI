@@ -15,7 +15,7 @@ from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
 
 from parsers.xml.tree_element import ElementTreeXMLParser
-from time_controller.step_processor import StepProcessor
+from step.step_processor import StepProcessor
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
 
