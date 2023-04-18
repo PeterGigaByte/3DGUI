@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel, QSlider, QFormLayout, QWidget
 
 class ControlFrame(QFrame):
     def __init__(self, vtk_api, animation_api, bottom_dock_widget, parent=None):
@@ -13,6 +13,39 @@ class ControlFrame(QFrame):
         button_layout = QHBoxLayout()
         button_layout.setAlignment(Qt.AlignLeft)
         info_layout = QHBoxLayout()
+
+        # Sliders
+        slider_layout = QFormLayout()
+
+        # Delay slider
+        delay_container = QWidget()
+        delay_layout = QHBoxLayout()
+        self.delay_slider = QSlider(Qt.Horizontal)
+        self.delay_slider.setMinimum(0)
+        self.delay_slider.setMaximum(1000)
+        self.delay_slider.setValue(self.animation_api.delay)
+        self.delay_slider.valueChanged.connect(self.on_delay_slider_changed)
+        delay_layout.addWidget(self.delay_slider)
+        self.delay_value_label = QLabel(str(self.animation_api.delay))
+        delay_layout.addWidget(self.delay_value_label)
+        delay_container.setLayout(delay_layout)
+        slider_layout.addRow("Delay (ms):", delay_container)
+
+        # Steps per event slider
+        steps_container = QWidget()
+        steps_layout = QHBoxLayout()
+        self.steps_per_event_slider = QSlider(Qt.Horizontal)
+        self.steps_per_event_slider.setMinimum(1)
+        self.steps_per_event_slider.setMaximum(100)
+        self.steps_per_event_slider.setValue(1)
+        self.steps_per_event_slider.valueChanged.connect(self.on_steps_per_event_slider_changed)
+        steps_layout.addWidget(self.steps_per_event_slider)
+        self.steps_value_label = QLabel(str(1))
+        steps_layout.addWidget(self.steps_value_label)
+        steps_container.setLayout(steps_layout)
+        slider_layout.addRow("Steps per event:", steps_container)
+
+        main_layout.addLayout(slider_layout)
 
         # Buttons
         # Play button
@@ -49,6 +82,14 @@ class ControlFrame(QFrame):
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
+    def on_delay_slider_changed(self, value):
+        self.animation_api.update_delay(value)
+        self.delay_value_label.setText(str(value))
+
+    def on_steps_per_event_slider_changed(self, value):
+        self.animation_api.steps_per_event = value
+        self.steps_value_label.setText(str(value))
+
     def show_progress_bar(self):
         """Show the progress bar."""
         self.progress_bar.show()  # Show the progress bar
@@ -56,7 +97,7 @@ class ControlFrame(QFrame):
     def update_progress_bar(self, actual_value, maximum):
         """Update the value of the progress bar."""
         self.progress_bar.setValue(actual_value)  # Update the value of the progress bar
-        self.progress_bar.setMaximum(maximum) # Update the maximum value of the progress bar
+        self.progress_bar.setMaximum(maximum)  # Update the maximum value of the progress bar
 
     def on_play_button_clicked(self):
         self.bottom_dock_widget.log("Play button pressed - Animation started.")
@@ -74,10 +115,10 @@ class ControlFrame(QFrame):
 
     def on_reset_button_clicked(self):
         self.bottom_dock_widget.log("Reset button pressed - Animation reset.")
+        self.animation_api.reset_animation()
 
     def update_status(self, left_info_label_text, right_info_label_text, actual_value, maximum):
         """Update left and right text of the information label."""
         self.left_info_label.setText(left_info_label_text)
         self.right_info_label.setText(right_info_label_text)
         self.update_progress_bar(actual_value, maximum)
-

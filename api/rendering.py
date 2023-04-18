@@ -97,3 +97,19 @@ class EnvironmentRenderingApi:
         # self.create_node(-50, 50, 10)
         # self.create_node(50, -50, 10)
         self.renderer.Render()
+
+    def clear_all_packets(self):
+        # Iterate through all the packet IDs and remove them
+        for packet_id in list(self.packets.keys()):
+            self.remove_packet(packet_id)
+
+        # Render the window again to show the changes
+        self.renderer.GetRenderWindow().Render()
+
+    def reset_nodes(self):
+        # Iterate through all the packet IDs and remove them
+        for packet_id in list(self.packets.keys()):
+            self.remove_packet(packet_id)
+
+        # Render the window again to show the changes
+        self.renderer.GetRenderWindow().Render()
