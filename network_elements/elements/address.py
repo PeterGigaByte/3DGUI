@@ -1,5 +1,7 @@
 from network_elements.tags import AddressTags
 
+"""<address>"""
+
 
 class Address:
     def __init__(self, address):

@@ -1,7 +1,9 @@
 from network_elements.tags import WprTags
 
+"""<wpr>"""
 
-class Wpr:
+
+class WirelessPacketReception:
     def __init__(self, u_id, t_id, fb_rx, lb_rx):
         self.u_id = u_id
         self.t_id = t_id

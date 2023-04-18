@@ -2,7 +2,7 @@ from xml.etree import ElementTree
 
 from network_elements.elements import (
     Address, Anim, Ip, IpV6, Link, Ncs, Node, NonP2pLinkProperties,
-    Nu, P, Pr, Res, Wpr
+    NodeUpdate, WiredPacket, Broadcaster, Resource, WirelessPacketReception
 )
 from network_elements.tags import NetworkElementTags, AnimTags, NodeTags, NuTags, NonP2pLinkPropertiesTags, AddressTags, \
     IpTags, IpV6Tags, NcsTags, PTags, WprTags, PrTags, ResTags, LinkTags
@@ -24,19 +24,19 @@ def parse_tag(selected_tag):
                         )
 
         case NetworkElementTags.NU_TAG.value:
-            return Nu(selected_tag.attrib.get(NuTags.P_TAG),
-                      selected_tag.attrib.get(NuTags.T_TAG),
-                      selected_tag.attrib.get(NuTags.ID_TAG),
-                      selected_tag.attrib.get(NuTags.COLOR_R_TAG),
-                      selected_tag.attrib.get(NuTags.COLOR_G_TAG),
-                      selected_tag.attrib.get(NuTags.COLOR_B_TAG),
-                      selected_tag.attrib.get(NuTags.WIDTH_TAG),
-                      selected_tag.attrib.get(NuTags.HEIGHT_TAG),
-                      selected_tag.attrib.get(NuTags.COORD_X_TAG),
-                      selected_tag.attrib.get(NuTags.COORD_Y_TAG),
-                      selected_tag.attrib.get(NuTags.COORD_Z_TAG),
-                      selected_tag.attrib.get(NuTags.DESCRIPTION_TAG),
-                      )
+            return NodeUpdate(selected_tag.attrib.get(NuTags.P_TAG),
+                              selected_tag.attrib.get(NuTags.T_TAG),
+                              selected_tag.attrib.get(NuTags.ID_TAG),
+                              selected_tag.attrib.get(NuTags.COLOR_R_TAG),
+                              selected_tag.attrib.get(NuTags.COLOR_G_TAG),
+                              selected_tag.attrib.get(NuTags.COLOR_B_TAG),
+                              selected_tag.attrib.get(NuTags.WIDTH_TAG),
+                              selected_tag.attrib.get(NuTags.HEIGHT_TAG),
+                              selected_tag.attrib.get(NuTags.COORD_X_TAG),
+                              selected_tag.attrib.get(NuTags.COORD_Y_TAG),
+                              selected_tag.attrib.get(NuTags.COORD_Z_TAG),
+                              selected_tag.attrib.get(NuTags.DESCRIPTION_TAG),
+                              )
 
         case NetworkElementTags.NONP2PLINKPROPERTIES_TAG.value:
             return NonP2pLinkProperties(selected_tag.attrib.get(NonP2pLinkPropertiesTags.ID_TAG),
@@ -67,31 +67,31 @@ def parse_tag(selected_tag):
                        )
 
         case NetworkElementTags.P_TAG.value:
-            return P(selected_tag.attrib.get(PTags.FROM_ID_TAG),
-                     selected_tag.attrib.get(PTags.FB_TX_TAG),
-                     selected_tag.attrib.get(PTags.LB_TX_TAG),
-                     selected_tag.attrib.get(PTags.META_INFO_TAG),
-                     selected_tag.attrib.get(PTags.TO_ID_TAG),
-                     selected_tag.attrib.get(PTags.FB_RX_TAG),
-                     selected_tag.attrib.get(PTags.LB_RX_TAG)
-                     )
+            return WiredPacket(selected_tag.attrib.get(PTags.FROM_ID_TAG),
+                               selected_tag.attrib.get(PTags.FB_TX_TAG),
+                               selected_tag.attrib.get(PTags.LB_TX_TAG),
+                               selected_tag.attrib.get(PTags.META_INFO_TAG),
+                               selected_tag.attrib.get(PTags.TO_ID_TAG),
+                               selected_tag.attrib.get(PTags.FB_RX_TAG),
+                               selected_tag.attrib.get(PTags.LB_RX_TAG)
+                               )
 
         case NetworkElementTags.WPR_TAG.value:
-            return Wpr(selected_tag.attrib.get(WprTags.U_ID_TAG),
-                       selected_tag.attrib.get(WprTags.T_ID_TAG),
-                       selected_tag.attrib.get(WprTags.FB_RX_TAG),
-                       selected_tag.attrib.get(WprTags.LB_RX_TAG)
-                       )
+            return WirelessPacketReception(selected_tag.attrib.get(WprTags.U_ID_TAG),
+                                           selected_tag.attrib.get(WprTags.T_ID_TAG),
+                                           selected_tag.attrib.get(WprTags.FB_RX_TAG),
+                                           selected_tag.attrib.get(WprTags.LB_RX_TAG)
+                                           )
         case NetworkElementTags.PR_TAG.value:
-            return Pr(selected_tag.attrib.get(PrTags.U_ID_TAG),
-                      selected_tag.attrib.get(PrTags.F_ID_TAG),
-                      selected_tag.attrib.get(PrTags.FB_TX_TAG),
-                      selected_tag.attrib.get(PrTags.META_INFO_TAG)
-                      )
+            return Broadcaster(selected_tag.attrib.get(PrTags.U_ID_TAG),
+                               selected_tag.attrib.get(PrTags.F_ID_TAG),
+                               selected_tag.attrib.get(PrTags.FB_TX_TAG),
+                               selected_tag.attrib.get(PrTags.META_INFO_TAG)
+                               )
         case NetworkElementTags.RES_TAG.value:
-            return Res(selected_tag.attrib.get(ResTags.RID_TAG),
-                       selected_tag.attrib.get(ResTags.P_TAG)
-                       )
+            return Resource(selected_tag.attrib.get(ResTags.RID_TAG),
+                            selected_tag.attrib.get(ResTags.P_TAG)
+                            )
         case NetworkElementTags.LINK_TAG.value:
             return Link(selected_tag.attrib.get(LinkTags.FROM_ID_TAG),
                         selected_tag.attrib.get(LinkTags.TO_ID_TAG),

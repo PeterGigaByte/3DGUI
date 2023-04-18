@@ -1,7 +1,9 @@
 from network_elements.tags import PTags
 
+"""<p>"""
 
-class P:
+
+class WiredPacket:
     def __init__(self, f_id, fb_tx, lb_tx, meta_info, t_id, fb_rx, lb_rx):
         self.f_id = f_id
         self.fb_tx = fb_tx

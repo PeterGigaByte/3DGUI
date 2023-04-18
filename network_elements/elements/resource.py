@@ -1,7 +1,9 @@
 from network_elements.tags import ResTags
 
+"""<res>"""
 
-class Res:
+
+class Resource:
     def __init__(self, rid, p):
         self.rid = rid
         self.p = p

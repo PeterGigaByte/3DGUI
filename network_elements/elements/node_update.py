@@ -1,7 +1,9 @@
 from network_elements.tags import NuTags
 
+"""<nu>"""
 
-class Nu:
+
+class NodeUpdate:
     def __init__(self, p, time, id, r, g, b, w, h, x, y, z, descr):
         self.p = p
         self.time = time

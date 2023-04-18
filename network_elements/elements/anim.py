@@ -1,5 +1,7 @@
 from network_elements.tags import AnimTags
 
+"""<anim>"""
+
 
 class Anim:
     def __init__(self, ver, file_type):

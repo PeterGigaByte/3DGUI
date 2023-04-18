@@ -2,15 +2,11 @@ import datetime
 import time
 import uuid
 
-from network_elements.elements import P, Node, Nu, Wpr
+from network_elements.elements import WiredPacket, Node, NodeUpdate, WirelessPacketReception
 from step.step import PacketStep, NodeUpdateStep
 from step.step_enum import StepType
 from utils.calcUtils import interpolate_coordinates_3D
 from utils.manage import get_objects_by_type, get_node_coor_by_id
-
-
-class NodeStep:
-    pass
 
 
 class StepProcessor:
@@ -20,8 +16,8 @@ class StepProcessor:
 
     def process_steps(self, data):
         node_data = get_objects_by_type(data.content, Node)
-        node_update_data = get_objects_by_type(data.content, Nu)
-        p_data = get_objects_by_type(data.content, P)
+        node_update_data = get_objects_by_type(data.content, NodeUpdate)
+        p_data = get_objects_by_type(data.content, WiredPacket)
         num_steps = 20  # Number of animation steps
 
         # Combine node update data and packet data
@@ -33,16 +29,17 @@ class StepProcessor:
         updated_node_data = node_data.copy()
 
         for item in combined_data:
-            if isinstance(item, Nu):
+            if isinstance(item, NodeUpdate):
                 # Update the node position
                 node = next((node for node in updated_node_data if node.id == item.id), None)
                 if node:
                     if item.x and item.y and item.z is not None:
                         node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
-                    node_update = NodeUpdateStep(float(item.time), item.id, item.r, item.g, item.b, item.w, item.h, item.x, item.y, item.z, item.descr)
+                    node_update = NodeUpdateStep(float(item.time), item.id, item.r, item.g, item.b, item.w, item.h,
+                                                 item.x, item.y, item.z, item.descr)
                     self.substeps[StepType.NODE_UPDATE].append(node_update)
 
-            elif isinstance(item, P):
+            elif isinstance(item, WiredPacket):
                 packet_id = uuid.uuid4()
                 for step in range(num_steps):
                     time_step = float(item.fb_tx) + (
@@ -56,7 +53,7 @@ class StepProcessor:
                                                 x, y, z)
                     if packet_substep.f_id != packet_substep.t_id:
                         self.substeps[StepType.WIRED_PACKET].append(packet_substep)
-            elif isinstance(item, Wpr):
+            elif isinstance(item, WirelessPacketReception):
                 pass
 
         # Combine all step type lists and sort them by time

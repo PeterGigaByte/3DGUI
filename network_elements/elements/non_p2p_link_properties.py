@@ -1,5 +1,7 @@
 from network_elements.tags import NonP2pLinkPropertiesTags
 
+"""<nonp2plinkproperties>"""
+
 
 class NonP2pLinkProperties:
     def __init__(self, id, ip_address, channel_type):

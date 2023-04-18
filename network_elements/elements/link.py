@@ -1,5 +1,7 @@
 from network_elements.tags import LinkTags
 
+"""<link>"""
+
 
 class Link:
     def __init__(self, from_id, to_id, fd, td, ld):

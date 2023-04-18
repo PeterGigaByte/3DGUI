@@ -1,5 +1,7 @@
 from network_elements.tags import NcsTags
 
+"""<ncs>"""
+
 
 class Ncs:
     def __init__(self, nc_id, n, t):

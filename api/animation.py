@@ -1,6 +1,3 @@
-import time
-
-import vtk
 from PyQt5.QtCore import QCoreApplication, QTimer
 
 from network_elements.elements import Node

@@ -1,5 +1,7 @@
 from network_elements.tags import NodeTags
 
+"""<node>"""
+
 
 class Node:
     def __init__(self, id, sys_id, loc_x, loc_y, loc_z):
