@@ -2,7 +2,7 @@ from PyQt5.QtCore import QCoreApplication, QTimer
 
 from network_elements.elements import Node
 from step.step_enum import StepType
-from utils.manage import get_objects_by_type
+from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
 
 class vtkTimerCallback():
@@ -40,7 +40,7 @@ class AnimationApi:
     def prepare_animation(self):
         nodes = get_objects_by_type(self.data.content, Node)
         for node in nodes:
-            self.renderer_api.create_node(int(node.loc_x), int(node.loc_y), int(node.loc_z))
+            self.renderer_api.create_node(x=int(node.loc_x), y=int(node.loc_y), z=int(node.loc_z), id=node.id, description="Node " + node.id)
         self.renderer_api.renderer.GetRenderWindow().Render()
 
     def animate_substeps(self):
@@ -86,19 +86,21 @@ class AnimationApi:
 
     def handle_packet_step(self, step):
         packet_id = step.packet_id
-        if step.step_n == 0:
-            x, y, z = step.x, step.y, step.z
+        if step.step_number == 0:
+            x, y, z = step.loc_x, step.loc_y, step.loc_z
             self.renderer_api.create_packet(x, y, z, packet_id=packet_id)
-        elif step.step_n == 19 and packet_id in self.renderer_api.packets:
+        elif step.step_number == 19 and packet_id in self.renderer_api.packets:
             if packet_id in self.renderer_api.packets:
                 self.renderer_api.remove_packet(packet_id)
         # Update the position of the packet for intermediate steps
         elif packet_id in self.renderer_api.packets:
-            x, y, z = step.x, step.y, step.z
+            x, y, z = step.loc_x, step.loc_y, step.loc_z
             self.renderer_api.update_packet_position(packet_id, x, y, z)
 
     def handle_node_update(self, step):
-        pass
+        # Find the node with the matching ID
+        node = get_rendering_node_by_id(self.renderer_api.nodes, step.node_id)
+        node.update_attributes(step, self.renderer_api.renderer)
 
     def start_timer(self):
         self.timer_step.start(self.delay)

@@ -33,3 +33,7 @@ class Ground:
     def add_to_renderer(self, renderer):
         renderer.AddActor(self.actor)
 
+    def move_ground(self, step_size, renderer):
+        """Move the ground up or down by a specified step size."""
+        # TODO
+        renderer.Render()  # Force a render to update the changes

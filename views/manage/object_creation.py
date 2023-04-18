@@ -1,7 +1,7 @@
 def create_node(environment, inputs):
     try:
         x, y, z = [int(inputs[key].text()) for key in ('x', 'y', 'z')]
-        environment.vtk_api.create_node(x, y, z)
+        environment.vtk_api.create_node(x=x, y=y, z=z)
         environment.bottom_dock_widget.log(f"Node with coordinates [{x},{y},{z}] was created.")
     except ValueError as ve:
         environment.bottom_dock_widget.log(f"Value error was thrown because of wrong arguments for creation of "

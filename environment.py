@@ -13,9 +13,11 @@ from components.frames.bottom import BottomFrame
 from components.frames.control import ControlFrame
 from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
+from network_elements.elements import Node
 
 from parsers.xml.tree_element import ElementTreeXMLParser
 from step.step_processor import StepProcessor
+from utils.manage import get_objects_by_type
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
 
@@ -114,8 +116,6 @@ class Environment(QMainWindow):
 
     def create_visualizing_view(self):
         """Create the visualizing view."""
-        # Move the code from `create_render_window` here, replacing
-        # `self.visualizing_frame` with `visualizing_view`
         visualizing_view = QFrame(self)
         self.setCentralWidget(visualizing_view)
 
@@ -176,16 +176,18 @@ class Environment(QMainWindow):
                                                                           "Files (*.json)",
                                                    options=options)
         if file_path:
-            # Here, you can add the code to read the file and process its contents.
+            # Add the code to read the file and process its contents.
             # For example, if the file contains data about nodes and buildings, you can parse the file
             # and create the corresponding nodes and buildings in your visualization.
             # 1. parse_file
             self.bottom_dock_widget.log(f"File opened: {file_path}")
             self.animation_api.set_data(self.parser_api.parse_file(file_path))
-            # 2 prepare environment
+            # 2. Update info from parsed data
+            self.left_dock_widget.update_list_widget(self.animation_api.data.content)
+            # 3 prepare environment
             self.animation_api.prepare_animation()
-            # 3 process data and set to animation
+            # 4 process data and set to animation
             self.animation_api.set_substeps(self.step_processor.process_steps(self.animation_api.data))
-            # 2. remove everything on vtk window create nodes and building
-            # 3. save logic
+            # 5. remove everything on vtk window create nodes and building
+            # 6. save logic
             self.visualizing_view()

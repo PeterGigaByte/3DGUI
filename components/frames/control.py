@@ -1,5 +1,7 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel, QSlider, QFormLayout, QWidget
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel, QSlider, QFormLayout, \
+    QWidget
+
 
 class ControlFrame(QFrame):
     def __init__(self, vtk_api, animation_api, bottom_dock_widget, parent=None):
@@ -70,6 +72,16 @@ class ControlFrame(QFrame):
         self.progress_bar.setValue(0)
         button_layout.addWidget(self.progress_bar)
 
+        # Move ground up button
+        self.move_ground_up_button = QPushButton("Move Ground Up")
+        button_layout.addWidget(self.move_ground_up_button)
+        self.move_ground_up_button.clicked.connect(self.on_move_ground_up_button_clicked)
+
+        # Move ground down button
+        self.move_ground_down_button = QPushButton("Move Ground Down")
+        button_layout.addWidget(self.move_ground_down_button)
+        self.move_ground_down_button.clicked.connect(self.on_move_ground_down_button_clicked)
+
         # Add information label about time
         self.left_info_label = QLabel()
         info_layout.addWidget(self.left_info_label)
@@ -122,3 +134,11 @@ class ControlFrame(QFrame):
         self.left_info_label.setText(left_info_label_text)
         self.right_info_label.setText(right_info_label_text)
         self.update_progress_bar(actual_value, maximum)
+
+    def on_move_ground_up_button_clicked(self):
+        self.bottom_dock_widget.log("Move Ground Up button pressed - Ground moved up.")
+        self.animation_api.renderer_api.ground.move_ground(1, self.animation_api.renderer_api.renderer)  # step size for moving the ground up
+
+    def on_move_ground_down_button_clicked(self):
+        self.bottom_dock_widget.log("Move Ground Down button pressed - Ground moved down.")
+        self.animation_api.renderer_api.ground.move_ground(-1,  self.animation_api.renderer_api.renderer)  # step size for moving the ground down

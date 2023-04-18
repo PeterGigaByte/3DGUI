@@ -2,11 +2,11 @@ import datetime
 import time
 import uuid
 
-from network_elements.elements import WiredPacket, Node, NodeUpdate, WirelessPacketReception
-from step.step import PacketStep, NodeUpdateStep
+from network_elements.elements import WiredPacket, Node, NodeUpdate, WirelessPacketReception, Broadcaster
+from step.step import WiredPacketStep, NodeUpdateStep
 from step.step_enum import StepType
 from utils.calcUtils import interpolate_coordinates_3D
-from utils.manage import get_objects_by_type, get_node_coor_by_id
+from utils.manage import get_objects_by_type, get_node_coordinates_by_id
 
 
 class StepProcessor:
@@ -24,7 +24,7 @@ class StepProcessor:
         combined_data = node_update_data + p_data
 
         # Sort the combined data by time
-        combined_data.sort(key=lambda x: float(x.time) if hasattr(x, 'time') else float(x.fb_tx))
+        combined_data.sort(key=lambda x: float(x.time) if hasattr(x, 'time') else float(x.first_byte_transmission_time))
 
         updated_node_data = node_data.copy()
 
@@ -42,18 +42,20 @@ class StepProcessor:
             elif isinstance(item, WiredPacket):
                 packet_id = uuid.uuid4()
                 for step in range(num_steps):
-                    time_step = float(item.fb_tx) + (
-                            step * (float(item.fb_rx) - float(item.fb_tx)) / (num_steps - 1))
+                    time_step = float(item.first_byte_transmission_time) + (
+                            step * (float(item.first_byte_received_time) - float(item.first_byte_transmission_time)) / (num_steps - 1))
 
-                    x, y, z = interpolate_coordinates_3D(get_node_coor_by_id(updated_node_data, item.f_id),
-                                                         get_node_coor_by_id(updated_node_data, item.t_id), step,
+                    x, y, z = interpolate_coordinates_3D(get_node_coordinates_by_id(updated_node_data, item.from_id),
+                                                         get_node_coordinates_by_id(updated_node_data, item.to_id), step,
                                                          num_steps)
-                    packet_substep = PacketStep(time_step, packet_id, item.f_id, item.t_id, item.fb_tx, item.fb_rx,
-                                                item.meta_info, step,
-                                                x, y, z)
-                    if packet_substep.f_id != packet_substep.t_id:
+                    packet_substep = WiredPacketStep(time_step, packet_id, item.from_id, item.to_id, item.first_byte_transmission_time, item.first_byte_received_time,
+                                                     item.meta_info, step,
+                                                     x, y, z)
+                    if packet_substep.from_id != packet_substep.to_id:
                         self.substeps[StepType.WIRED_PACKET].append(packet_substep)
             elif isinstance(item, WirelessPacketReception):
+                pass
+            elif isinstance(item, Broadcaster):
                 pass
 
         # Combine all step type lists and sort them by time
@@ -78,18 +80,18 @@ class StepProcessor:
         for substep in all_substeps:
             print(f"Time: {substep.time}")
 
-            if isinstance(substep, PacketStep):
+            if isinstance(substep, WiredPacketStep):
                 print(
-                    f"  packetId: {substep.packet_id} fId: {substep.f_id} tId: {substep.t_id} fbTx: {substep.fb_tx} fbRx: {substep.fb_rx}")
-                print(f"  step_n: {substep.step_n}")
-                print(f"  x: {substep.x} y: {substep.y} z: {substep.z}")
+                    f"  packetId: {substep.packet_id} fId: {substep.from_id} tId: {substep.to_id} fbTx: {substep.first_byte_transmission_time} fbRx: {substep.first_byte_received_time}")
+                print(f"  step_n: {substep.step_number}")
+                print(f"  x: {substep.loc_x} y: {substep.loc_y} z: {substep.loc_z}")
                 print(f"  Meta-info: {substep.meta_info}")
             elif isinstance(substep, NodeUpdateStep):
                 print(f"  node_id: {substep.node_id}")
-                print(f"  r: {substep.r} g: {substep.g} b: {substep.b}")
-                print(f"  w: {substep.w} h: {substep.h}")
-                print(f"  x: {substep.x} y: {substep.y} z: {substep.z}")
-                print(f"  description: {substep.descr}")
+                print(f"  r: {substep.red} g: {substep.green} b: {substep.blue}")
+                print(f"  w: {substep.width} h: {substep.height}")
+                print(f"  x: {substep.loc_x} y: {substep.loc_y} z: {substep.loc_z}")
+                print(f"  description: {substep.description}")
 
             print()
             time.sleep(step_duration.total_seconds())
