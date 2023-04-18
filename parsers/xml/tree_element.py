@@ -34,6 +34,7 @@ def parse_tag(selected_tag):
                       selected_tag.attrib.get(NuTags.HEIGHT_TAG),
                       selected_tag.attrib.get(NuTags.COORD_X_TAG),
                       selected_tag.attrib.get(NuTags.COORD_Y_TAG),
+                      selected_tag.attrib.get(NuTags.COORD_Z_TAG),
                       selected_tag.attrib.get(NuTags.DESCRIPTION_TAG),
                       )
 

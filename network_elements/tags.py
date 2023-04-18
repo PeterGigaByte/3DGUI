@@ -50,6 +50,7 @@ class NuTags:
     HEIGHT_TAG = 'h'
     COORD_X_TAG = 'x'
     COORD_Y_TAG = 'y'
+    COORD_Z_TAG = 'z'
     DESCRIPTION_TAG = 'descr'
 
 
@@ -77,7 +78,7 @@ class PTags:
     FROM_ID_TAG = 'fId'
     FB_TX_TAG = 'fbTx'
     LB_TX_TAG = 'lbTx'
-    META_INFO_TAG = 'meta_info'
+    META_INFO_TAG = 'meta-info'
     TO_ID_TAG = 'tId'
     FB_RX_TAG = 'fbRx'
     LB_RX_TAG = 'lbRx'

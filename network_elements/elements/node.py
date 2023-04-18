@@ -14,5 +14,6 @@ class Node:
             NodeTags.ID_TAG.value: self.id,
             NodeTags.SYS_ID_TAG.value: self.sys_id,
             NodeTags.LOC_X_TAG.value: self.loc_x,
+            NodeTags.LOC_Y_TAG.value: self.loc_y,
             NodeTags.LOC_Z_TAG.value: self.loc_z
         }

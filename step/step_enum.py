@@ -1,6 +1,7 @@
 from enum import Enum
 
 
-class StepEnum(Enum):
-    P = "P_OBJECT",
-    WPR = "WPR_OBJECT"
+class StepType(Enum):
+    WIRED_PACKET = "WIRED_PACKET",
+    WIRELESS_PACKET = "WIRELESS_PACKET"
+    NODE_UPDATE = "NODE_UPDATE"
