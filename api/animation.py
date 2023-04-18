@@ -52,7 +52,10 @@ class AnimationApi:
             self.start_timer()
 
     def run_single_step(self):
-        if self.current_substep < len(self.substeps) and not self.is_paused:
+        steps_executed = 0
+        render_every_n_steps = 10  # Adjust this value based on your requirements
+
+        while self.current_substep < len(self.substeps) and not self.is_paused:
             substep = self.substeps[self.current_substep]
             self.handle_step(substep)
             self.current_substep += 1
@@ -65,12 +68,16 @@ class AnimationApi:
                     len(self.substeps),
                 )
 
-            self.renderer_api.renderer.GetRenderWindow().Render()
-            QCoreApplication.processEvents()  # Process events during animation
+            if steps_executed % render_every_n_steps == 0:
+                self.renderer_api.renderer.GetRenderWindow().Render()
+                QCoreApplication.processEvents()  # Process events during animation
 
-            self.start_timer()
-        else:
-            self.stop_timer()
+            steps_executed += 1
+
+            if steps_executed >= self.steps_per_event:
+                break
+
+        self.start_timer()
 
     def handle_step(self, substep):
         packet_id = substep['packetId']
