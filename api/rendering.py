@@ -25,8 +25,9 @@ class EnvironmentRenderingApi:
 
     def create_ground(self):
         """Create a ground plane for the environment."""
-        self.ground = Ground(resolution=(200, 200), origin=(-500, -500, 0), point1=(500, -500, 0), point2=(-500, 500, 0),
-                        color=(0, 1, 0))
+        self.ground = Ground(resolution=(200, 200), origin=(-500, -500, 0), point1=(500, -500, 0),
+                             point2=(-500, 500, 0),
+                             color=(0, 1, 0))
         self.ground.add_to_renderer(self.renderer)
 
     def create_building(self, x, y, z, width, height):
@@ -35,9 +36,11 @@ class EnvironmentRenderingApi:
         building.add_to_renderer(self.renderer)
         self.buildings.append(building)
 
-    def create_node(self, id, x, y, z, radius=1, description="Node", node_color=(255, 0, 0), label_color=(255, 255, 255)):
+    def create_node(self, id, x, y, z, radius=1, description="Node", node_color=(255, 0, 0),
+                    label_color=(255, 255, 255)):
         """Create a node at the specified location."""
-        node = Node(x=x, y=y, z=z, radius=radius, description=description, node_color=node_color, label_color=label_color, node_id=id)
+        node = Node(x=float(x), y=float(y), z=float(z), radius=radius, description=description, node_color=node_color,
+                    label_color=label_color, node_id=id)
         node.add_to_renderer(renderer=self.renderer)
         self.nodes.append(node)
 
@@ -114,3 +117,9 @@ class EnvironmentRenderingApi:
 
         # Render the window again to show the changes
         self.renderer.GetRenderWindow().Render()
+
+    def clear_all_nodes(self):
+        """Remove all nodes from the environment."""
+        for node in self.nodes:
+            node.remove_from_renderer(renderer=self.renderer)
+        self.nodes = []

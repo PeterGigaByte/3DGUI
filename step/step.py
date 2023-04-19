@@ -33,7 +33,7 @@ class WiredPacketStep(Step):
 
 
 class NodeUpdateStep(Step):
-    def __init__(self, time, node_id, red, green, blue, width, height, loc_x, loc_y, loc_z, description):
+    def __init__(self, time, node_id, description, red, green, blue, width, height, loc_x, loc_y, loc_z=0):
         super().__init__(time, StepType.NODE_UPDATE)
         self.node_id = node_id
         self.red = red

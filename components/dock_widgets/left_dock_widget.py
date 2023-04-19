@@ -38,15 +38,20 @@ class LeftDockWidget(QDockWidget):
         self.list_widget.addItem(f"Node {node_id}")
         self.nodes[node_id] = {"properties": properties}
 
-    def add_node_property(self, node_id, property_name, values):
+    def add_node_property(self, node_id, parent_item, property_name, fourth_level_values=None):
+        groups = ["IP", "MAC"]
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} does not exist")
 
-        root_item = QTreeWidgetItem(None, [property_name])  # Set the parent to None
-        for value in values:
-            QTreeWidgetItem(root_item, [value])
+        if fourth_level_values is None:
+            fourth_level_values = []
 
-        self.nodes[node_id]["properties"].append(root_item)
+        second_level_item = QTreeWidgetItem(parent_item, [property_name])
+        for i, group_name in enumerate(groups):
+            third_level_item = QTreeWidgetItem(second_level_item, [group_name])
+            if i < len(fourth_level_values):
+                for fourth_level_value in fourth_level_values[i]:
+                    QTreeWidgetItem(third_level_item, [str(fourth_level_value)])
 
     def update_node_property(self, node_id, property_name, values):
         if node_id not in self.nodes:
@@ -74,11 +79,24 @@ class LeftDockWidget(QDockWidget):
         node_list = get_objects_by_type(data, Node)
         nonp2p_link_properties_list = get_objects_by_type(data, NonP2pLinkProperties)
         for node in node_list:
-            ip_addresses, mac_addresses = get_nonp2p_link_properties_by_node_id(nonp2p_link_properties_list, node.id)
+            channel_type_list, channel_type_dict = get_nonp2p_link_properties_by_node_id(nonp2p_link_properties_list,
+                                                                                         node.id)
             self.add_node(node.id)
-            self.add_node_property(node.id, "IP", ip_addresses)
-            self.add_node_property(node.id, "IPV6", [])
-            self.add_node_property(node.id, "MAC", mac_addresses)
+
+            channel_type_root = QTreeWidgetItem(None, ["Channel type"])
+            self.nodes[node.id]["properties"].append(channel_type_root)
+
+            for channel_type in channel_type_list:
+                ip_list = channel_type_dict[channel_type]['ips']
+                mac_list = channel_type_dict[channel_type]['macs']
+                self.add_node_property(node.id, channel_type_root, channel_type, [ip_list, mac_list])
+
+    def clear_widgets(self):
+        self.list_widget.clear()
+        self.tree_widget.clear()
+
+
+
 
 
     

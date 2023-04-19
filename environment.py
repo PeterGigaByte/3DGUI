@@ -132,6 +132,7 @@ class Environment(QMainWindow):
         # Top control frame init
         control_frame = ControlFrame(vtk_api=self.vtk_api, animation_api=self.animation_api, bottom_dock_widget=self.bottom_dock_widget)
         self.animation_api.set_control_update_callback(control_frame.update_status)
+        self.animation_api.set_max_steps_callback(control_frame.update_max_step_slider)
 
         # Left dock Widget frame init
         self.addDockWidget(Qt.LeftDockWidgetArea, self.left_dock_widget)
@@ -183,6 +184,7 @@ class Environment(QMainWindow):
             self.bottom_dock_widget.log(f"File opened: {file_path}")
             self.animation_api.set_data(self.parser_api.parse_file(file_path))
             # 2. Update info from parsed data
+            self.left_dock_widget.clear_widgets()
             self.left_dock_widget.update_list_widget(self.animation_api.data.content)
             # 3 prepare environment
             self.animation_api.prepare_animation()

@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel, QSlider, QFormLayout, \
     QWidget
 
+from components.frames.custom.custom_slider import CustomSlider
+
 
 class ControlFrame(QFrame):
     def __init__(self, vtk_api, animation_api, bottom_dock_widget, parent=None):
@@ -10,6 +12,7 @@ class ControlFrame(QFrame):
         self.animation_api = animation_api
         self.bottom_dock_widget = bottom_dock_widget
         self.tasks = []
+        self.initial_slider_value = 0
 
         main_layout = QVBoxLayout()
         button_layout = QHBoxLayout()
@@ -46,6 +49,22 @@ class ControlFrame(QFrame):
         steps_layout.addWidget(self.steps_value_label)
         steps_container.setLayout(steps_layout)
         slider_layout.addRow("Steps per event:", steps_container)
+
+        # Step slider
+        step_container = QWidget()
+        step_layout = QHBoxLayout()
+        self.step_slider = CustomSlider(Qt.Horizontal)  # Use CustomSlider instead of QSlider
+        self.step_slider.setMinimum(0)
+        self.step_slider.setMaximum(100)
+        self.step_slider.setValue(0)
+        self.step_slider.setTickInterval(1)
+        self.step_slider.sliderReleased.connect(self.on_step_slider_released)
+        self.step_slider.sliderPressed.connect(self.on_step_slider_pressed)
+        step_layout.addWidget(self.step_slider)
+        self.step_value_label = QLabel(str(0))
+        step_layout.addWidget(self.step_value_label)
+        step_container.setLayout(step_layout)
+        slider_layout.addRow("Step:", step_container)
 
         main_layout.addLayout(slider_layout)
 
@@ -102,6 +121,10 @@ class ControlFrame(QFrame):
         self.animation_api.steps_per_event = value
         self.steps_value_label.setText(str(value))
 
+    def on_step_slider_changed(self, value):
+        self.animation_api.set_current_step(value)  # Set the new current step
+        self.step_value_label.setText(str(value))  # Update the step label
+
     def show_progress_bar(self):
         """Show the progress bar."""
         self.progress_bar.show()  # Show the progress bar
@@ -118,11 +141,11 @@ class ControlFrame(QFrame):
     def on_pause_button_clicked(self):
         if not self.animation_api.is_paused:
             self.bottom_dock_widget.log("Pause button pressed - Animation paused.")
-            self.animation_api.pause_animation()
+            self.animation_api.pause_unpause_animation()
             self.pause_button.setText("Resume")
         else:
             self.bottom_dock_widget.log("Resume button pressed - Animation resumed.")
-            self.animation_api.pause_animation()
+            self.animation_api.pause_unpause_animation()
             self.pause_button.setText("Pause")
 
     def on_reset_button_clicked(self):
@@ -134,11 +157,33 @@ class ControlFrame(QFrame):
         self.left_info_label.setText(left_info_label_text)
         self.right_info_label.setText(right_info_label_text)
         self.update_progress_bar(actual_value, maximum)
+        self.update_value_steps(actual_value)
 
     def on_move_ground_up_button_clicked(self):
         self.bottom_dock_widget.log("Move Ground Up button pressed - Ground moved up.")
-        self.animation_api.renderer_api.ground.move_ground(1, self.animation_api.renderer_api.renderer)  # step size for moving the ground up
+        self.animation_api.renderer_api.ground.move_ground(1,
+                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground up
 
     def on_move_ground_down_button_clicked(self):
         self.bottom_dock_widget.log("Move Ground Down button pressed - Ground moved down.")
-        self.animation_api.renderer_api.ground.move_ground(-1,  self.animation_api.renderer_api.renderer)  # step size for moving the ground down
+        self.animation_api.renderer_api.ground.move_ground(-1,
+                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground down
+
+    # Add this new method in the ControlFrame class
+    def on_step_slider_pressed(self):
+        self.animation_api.pause_animation()
+        self.initial_slider_value = self.step_slider.value()
+
+    # Add this new method in the ControlFrame class
+    def on_step_slider_released(self):
+        new_slider_value = self.step_slider.value()
+        if new_slider_value != self.initial_slider_value:
+            self.on_step_slider_changed(new_slider_value)
+        self.animation_api.unpause_animation()
+
+    def update_max_step_slider(self, maximum_steps):
+        self.step_slider.setMaximum(maximum_steps)
+
+    def update_value_steps(self, value):
+        self.step_slider.setValue(value)
+        self.step_value_label.setText(str(value))

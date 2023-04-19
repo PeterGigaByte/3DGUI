@@ -5,14 +5,6 @@ from step.step_enum import StepType
 from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
 
-class vtkTimerCallback():
-    def __init__(self, animation_api):
-        self.animation_api = animation_api
-
-    def execute(self, obj, event):
-        self.animation_api.run_animation()
-
-
 class AnimationApi:
     def __init__(self, renderer_api):
         self.renderer_api = renderer_api
@@ -22,6 +14,8 @@ class AnimationApi:
         self.delay = 0
         self.steps_per_event = 1
         self.is_paused = False
+        self.max_steps_callback = None
+        self.steps_update_callback = None
         self.control_update_callback = None
         self.progress_bar_update_callback = None
         self.progress_bar_maximum_callback = None
@@ -34,13 +28,11 @@ class AnimationApi:
     def set_control_update_callback(self, callback):
         self.control_update_callback = callback
 
-    def set_substeps(self, substeps):
-        self.substeps = substeps
-
     def prepare_animation(self):
         nodes = get_objects_by_type(self.data.content, Node)
         for node in nodes:
-            self.renderer_api.create_node(x=int(node.loc_x), y=int(node.loc_y), z=int(node.loc_z), id=node.id, description="Node " + node.id)
+            self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
+                                          description="Node " + node.id)
         self.renderer_api.renderer.GetRenderWindow().Render()
 
     def animate_substeps(self):
@@ -65,7 +57,6 @@ class AnimationApi:
                     self.current_step,
                     len(self.substeps),
                 )
-
             if steps_executed % render_every_n_steps == 0:
                 self.renderer_api.renderer.GetRenderWindow().Render()
                 QCoreApplication.processEvents()  # Process events during animation
@@ -108,12 +99,20 @@ class AnimationApi:
     def stop_timer(self):
         self.timer_step.stop()
 
-    def pause_animation(self):
+    def pause_unpause_animation(self):
         self.is_paused = not self.is_paused
         if not self.is_paused:
             self.start_timer()
         else:
             self.stop_timer()
+
+    def pause_animation(self):
+        self.is_paused = True
+        self.stop_timer()
+
+    def unpause_animation(self):
+        self.is_paused = False
+        self.start_timer()
 
     def reset_animation(self):
         self.current_step = 0
@@ -121,6 +120,8 @@ class AnimationApi:
 
     def clear_vtk_window(self):
         self.renderer_api.clear_all_packets()
+        self.renderer_api.clear_all_nodes()
+        self.prepare_animation()
         if self.control_update_callback:
             self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", "Time 0",
                                          self.current_step, len(self.substeps))
@@ -130,3 +131,20 @@ class AnimationApi:
 
     def update_steps_per_event(self, new_steps_per_event):
         self.steps_per_event = new_steps_per_event
+
+    def set_current_step(self, new_step):
+        self.current_step = new_step
+        self.clear_vtk_window()
+        for i in range(new_step):
+            step = self.substeps[i]
+            self.handle_step(step)
+        self.renderer_api.renderer.GetRenderWindow().Render()
+
+    def set_max_steps_callback(self, callback):
+        self.max_steps_callback = callback
+
+
+    def set_substeps(self, substeps):
+        self.substeps = substeps
+        if self.max_steps_callback:
+            self.max_steps_callback(len(self.substeps))

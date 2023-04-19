@@ -35,10 +35,9 @@ class StepProcessor:
                 if node:
                     if item.x and item.y and item.z is not None:
                         node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
-                    node_update = NodeUpdateStep(float(item.time), item.id, item.r, item.g, item.b, item.w, item.h,
-                                                 item.x, item.y, item.z, item.descr)
+                    node_update = NodeUpdateStep(time=float(item.time), node_id=item.id, red=item.r, green=item.g, blue=item.b, width=item.w, height=item.h,
+                                                 loc_x=item.x, loc_y=item.y, loc_z=item.z, description=item.descr)
                     self.substeps[StepType.NODE_UPDATE].append(node_update)
-
             elif isinstance(item, WiredPacket):
                 packet_id = uuid.uuid4()
                 for step in range(num_steps):

@@ -4,7 +4,7 @@ from network_elements.tags import NodeTags
 
 
 class Node:
-    def __init__(self, id, sys_id, loc_x, loc_y, loc_z):
+    def __init__(self, id, sys_id, loc_x, loc_y, loc_z=0):
         self.id = id
         self.sys_id = sys_id
         self.loc_x = loc_x
