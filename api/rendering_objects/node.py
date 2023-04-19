@@ -48,7 +48,7 @@ class Node:
     def create_text_mapper(self):
         # Update text_source
         text_source = vtk.vtkVectorText()
-        text_source.SetText(f"{self.description}\n({self.x}, {self.y}, {self.z})")
+        text_source.SetText(f"{self.description}\n({round(self.x)}, {round(self.y)}, {round(self.z)})")
 
         # Create a new text_mapper
         text_mapper = vtk.vtkPolyDataMapper()
@@ -79,9 +79,9 @@ class Node:
 
     def update_attributes(self, node, renderer):
         if node.loc_x and node.loc_y and node.loc_z is not None:
-            self.x = int(node.loc_x)
-            self.y = int(node.loc_y)
-            self.z = int(node.loc_z)
+            self.x = float(node.loc_x)
+            self.y = float(node.loc_y)
+            self.z = float(node.loc_z)
             # Update sphere_actor
             self.sphere_actor.SetPosition(self.x, self.y, self.z)
             # Update text_actor
@@ -90,7 +90,7 @@ class Node:
             self.description = node.description
             self.update_text_actor(self.text_actor)
         if node.red and node.green and node.blue is not None:
-            self.node_color = (int(node.red), int(node.green), int(node.blue))
+            self.node_color = (float(node.red), float(node.green), float(node.blue))
             self.sphere_actor.GetProperty().SetColor(*normalize_rgb(self.node_color))
 
         if renderer:
