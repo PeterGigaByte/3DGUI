@@ -59,7 +59,14 @@ class StepProcessor:
         for item in combined_data:
             if isinstance(item, NodeUpdate):
                 # If the item is a NodeUpdate, update the position of the corresponding node_object and add a NodeUpdateStep
-                self.update_node_position(item, updated_node_data)
+                # Find the node_object with the matching ID in updated_node_data
+                node = next((node for node in updated_node_data if node.id == item.id), None)
+
+                # If the node_object exists, update its position
+                if node:
+                    if item.x and item.y and item.z is not None:
+                        node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
+                self.update_node_position(item)
             elif isinstance(item, WiredPacket):
                 # If the item is a WiredPacket, generate substeps for the packet_object and add WiredPacketStep objects
                 self.generate_wired_packet_substeps(item, num_steps_wired_packet_animation, updated_node_data)
@@ -221,7 +228,7 @@ class StepProcessor:
 
         self.substeps[StepType.WIRELESS_PACKET_RECEPTION].extend(reception_substeps)
 
-    def update_node_position(self, item, updated_node_data):
+    def update_node_position(self, item):
         """
         Updates the position of a node_object in updated_node_data and adds a NodeUpdateStep to the substeps.
 
@@ -232,18 +239,11 @@ class StepProcessor:
         Returns:
         - None
         """
-        # Find the node_object with the matching ID in updated_node_data
-        node = next((node for node in updated_node_data if node.id == item.id), None)
 
-        # If the node_object exists, update its position
-        if node:
-            if item.x and item.y and item.z is not None:
-                node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
+        # Create a NodeUpdateStep object for this update
+        node_update = NodeUpdateStep(time=float(item.time), node_id=item.id, red=item.r, green=item.g, blue=item.b,
+                                     width=item.w, height=item.h,
+                                     loc_x=item.x, loc_y=item.y, loc_z=item.z, description=item.descr)
 
-            # Create a NodeUpdateStep object for this update
-            node_update = NodeUpdateStep(time=float(item.time), node_id=item.id, red=item.r, green=item.g, blue=item.b,
-                                         width=item.w, height=item.h,
-                                         loc_x=item.x, loc_y=item.y, loc_z=item.z, description=item.descr)
-
-            # Append the NodeUpdateStep object to the list of substeps
-            self.substeps[StepType.NODE_UPDATE].append(node_update)
+        # Append the NodeUpdateStep object to the list of substeps
+        self.substeps[StepType.NODE_UPDATE].append(node_update)

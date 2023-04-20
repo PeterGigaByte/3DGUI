@@ -1,12 +1,11 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QMainWindow, QMenu, QFrame, QVBoxLayout, QFileDialog, QStackedWidget, QLabel, QGridLayout
+    QMainWindow, QMenu, QFrame, QFileDialog, QStackedWidget, QGridLayout
 )
 
 from api.animation import AnimationApi
 from api.parser import ParserAPI
 from api.rendering.rendering import EnvironmentRenderingApi
-
 from components.dock_widgets.bottom_dock_widget import BottomDockWidget
 from components.dock_widgets.left_dock_widget import LeftDockWidget
 from components.dock_widgets.right_dock_widget import RightDockWidget
