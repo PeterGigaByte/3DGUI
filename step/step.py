@@ -48,8 +48,9 @@ class NodeUpdateStep(Step):
 
 
 class BroadcastStep(Step):
-    def __init__(self, time, loc_x, loc_y, radius, step_number, loc_z=0):
+    def __init__(self, broadcast_id, time, loc_x, loc_y, radius, step_number, loc_z=0):
         super().__init__(time, StepType.BROADCAST)
+        self.broadcast_id = broadcast_id
         self.loc_x = loc_x
         self.loc_y = loc_y
         self.loc_z = loc_z
@@ -58,8 +59,9 @@ class BroadcastStep(Step):
 
 
 class WirelessPacketReceptionStep(Step):
-    def __init__(self, time, loc_x, loc_y, broadcast_loc_x, broadcast_loc_y, radius, step_number, loc_z=0, broadcast_loc_z=0):
+    def __init__(self, wireless_packet_id, time, loc_x, loc_y, broadcast_loc_x, broadcast_loc_y, radius, step_number, loc_z=0, broadcast_loc_z=0):
         super().__init__(time, StepType.WIRELESS_PACKET_RECEPTION)
+        self.wireless_packet_id = wireless_packet_id
         self.loc_x = loc_x
         self.loc_y = loc_y
         self.loc_z = loc_z

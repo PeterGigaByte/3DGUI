@@ -99,13 +99,14 @@ class EnvironmentRenderingApi:
         """Create the test visualizing view."""
         self.renderer.SetBackground(0.5, 0.5, 1)
         self.create_ground()
-        self.create_wifi_signal(1, 1, 1, 1, 1, 1, 1)
+        #self.create_broadcaster_signal(0, 0, 0, 0, 0, 0, 0, 0)
+        #self.remove_wifi_signal(0)
         # self.create_building(-100, -100, 0, 50, 100)
         # self.create_building(100, 100, 0, 50, 100)
         # self.create_node(0, 0, 10)
         # self.create_node(-50, 50, 10)
         # self.create_node(50, -50, 10)
-        self.renderer.Render()
+        self.renderer.GetRenderWindow().Render()
 
     def clear_all_packets(self):
         # Iterate through all the packet_object IDs and remove them
@@ -129,15 +130,22 @@ class EnvironmentRenderingApi:
             node.remove_from_renderer(renderer=self.renderer)
         self.nodes = []
 
-    def create_broadcaster_signal(self, x, y, z, num_arcs, arc_thickness, arc_resolution, spacing_factor):
+    def create_broadcaster_signal(self, signal_id, x, y, z, num_arcs, arc_thickness, arc_resolution,
+                           normal, direction, radius):
         # Create BroadcasterSignal example
         broadcaster_signal = BroadcasterSignal(self.renderer)
-        broadcaster_signal.create_broadcaster_signal_arcs(x=20, y=0, z=0, num_arcs=1, arc_thickness=0.5,
-                                                          arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 1),
-                                                          radius=15)
+        broadcaster_signal.create_broadcaster_signal_arcs(x=x, y=y, z=z, num_arcs=num_arcs, arc_thickness=arc_thickness,
+                                                          arc_resolution=arc_resolution, normal=normal,
+                                                          direction=direction, radius=radius)
+        self.signals[signal_id] = broadcaster_signal
 
-    def create_wifi_signal(self, x, y, z, num_arcs, arc_thickness, arc_resolution, spacing_factor):
-        # Create wifi example
+    def create_wifi_signal(self, signal_id, x, y, z, num_arcs=3, arc_thickness=0.5, arc_resolution=50,
+                           normal=(1, 0, 0), direction=(0, 0, 1), radius=10):
         wifi_signal = WifiSignal(self.renderer)
-        wifi_signal.create_wifi_signal_arcs(x=0, y=0, z=0, num_arcs=1, arc_thickness=0.5, arc_resolution=50,
-                                            normal=(1, 0, 0), direction=(10, 10, 10), radius=5)
+        wifi_signal.create_wifi_signal_arcs(x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, radius)
+        self.signals[signal_id] = wifi_signal
+
+    def remove_wifi_signal(self, signal_id):
+        self.signals[signal_id].remove_all_arcs()
+        del self.signals[signal_id]
+

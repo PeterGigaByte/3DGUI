@@ -111,10 +111,38 @@ class AnimationApi:
         node.update_attributes(step, self.renderer_api.renderer)
 
     def handle_broadcast(self, step):
-        self.bottom_dock_widget.log("Handle broadcast " + str(step.step_number))
+        broadcast_id = step.broadcast_id
+        x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
+        if step.step_number == 0:
+            self.renderer_api.create_broadcaster_signal(signal_id=broadcast_id, x=x, y=y, z=z,
+                                                        num_arcs=1, radius=step.radius, arc_thickness=0.5,
+                                                        arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 0))
+        elif step.step_number == 11 and broadcast_id in self.renderer_api.signals:
+            if broadcast_id in self.renderer_api.signals:
+                self.renderer_api.remove_wifi_signal(broadcast_id)
+        # Update the position of the packet_object for intermediate steps
+        elif broadcast_id in self.renderer_api.signals:
+            self.renderer_api.remove_wifi_signal(broadcast_id)
+            self.renderer_api.create_broadcaster_signal(signal_id=broadcast_id, x=x, y=y, z=z,
+                                                        num_arcs=1, radius=step.radius, arc_thickness=0.5,
+                                                        arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 0))
 
     def handle_wireless_packet_reception(self, step):
-        self.bottom_dock_widget.log("Handle wireless packet reception " + str(step.step_number))
+        wireless_packet_id = step.wireless_packet_id
+        x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
+        target_x, target_y, target_z = float(step.broadcast_loc_x), float(step.broadcast_loc_y), float(
+            step.broadcast_loc_z)
+        if step.step_number == 0:
+            self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
+                                                 direction=(target_x, target_y, target_z), radius=step.radius)
+        elif step.step_number == 8 and wireless_packet_id in self.renderer_api.signals:
+            if wireless_packet_id in self.renderer_api.signals:
+                self.renderer_api.remove_wifi_signal(wireless_packet_id)
+        # Update the position of the packet_object for intermediate steps
+        elif wireless_packet_id in self.renderer_api.signals:
+            self.renderer_api.remove_wifi_signal(wireless_packet_id)
+            self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
+                                                 direction=(target_x, target_y, target_z), radius=step.radius)
 
     def start_timer(self):
         self.timer_step.start(self.delay)

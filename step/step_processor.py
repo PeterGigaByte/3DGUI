@@ -32,16 +32,17 @@ class StepProcessor:
         broadcaster_data = get_objects_by_type(data.content, Broadcaster)
         wireless_packet_data = get_objects_by_type(data.content, WirelessPacketReception)
 
+        """If changed - do not forget to update in animation handlers!!"""
         # Set the number of steps to interpolate between each substep for wired packets
         num_steps_wired_packet_animation = 20
         # broadcast step parameters
-        num_steps_broadcast_transmission = 4
+        num_steps_broadcast_transmission = 12
         # wireless packet_object reception step parameters
-        num_steps_wireless_packet_reception = 4
+        num_steps_wireless_packet_reception = 9
         # first radius
-        radius_constant = 5
+        radius_constant = 2
         end_time_constant = 0.000010
-
+        """-----------------------------------------------------------"""
         # Combine the node_object update data and wired packet_object data
         combined_data = node_update_data + wired_packet_data + broadcaster_data + wireless_packet_data
 
@@ -85,21 +86,18 @@ class StepProcessor:
                                                              end_time,
                                                              radius_constant, updated_node_data, end_time_constant)
                 broadcaster_transmitted[item.unique_id] = item
-                pass
             elif isinstance(item, WirelessPacketReception):
                 # If the item is a WirelessPacketReception, do nothing (for now)
                 self.generate_wireless_packet_reception_substeps(item, num_steps_wireless_packet_reception,
                                                                  broadcaster_transmitted[item.unique_id],
                                                                  radius_constant, updated_node_data)
 
-                pass
-
         # Combine all substeps for each step type and sort them by time
         all_substeps = []
         for step_type_list in self.substeps.values():
             all_substeps.extend(step_type_list)
         all_substeps.sort(key=lambda x: x.time)
-
+        #self.display_steps()
         # Return the sorted list of all substeps
         return all_substeps
 
@@ -126,20 +124,24 @@ class StepProcessor:
         for substep in all_substeps:
             print(f"Time: {substep.time}")
 
-            if isinstance(substep, WiredPacketStep):
+            if isinstance(substep, WiredPacketStep) and False:
                 # If the substep is a WiredPacketStep, print its information
                 print(
                     f"  packetId: {substep.packet_id} fId: {substep.from_id} tId: {substep.to_id} fbTx: {substep.first_byte_transmission_time} fbRx: {substep.first_byte_received_time}")
                 print(f"  step_n: {substep.step_number}")
                 print(f"  x: {substep.loc_x} y: {substep.loc_y} z: {substep.loc_z}")
                 print(f"  Meta-info: {substep.meta_info}")
-            elif isinstance(substep, NodeUpdateStep):
+            elif isinstance(substep, NodeUpdateStep) and False:
                 # If the substep is a NodeUpdateStep, print its information
                 print(f"  node_id: {substep.node_id}")
                 print(f"  r: {substep.red} g: {substep.green} b: {substep.blue}")
                 print(f"  w: {substep.width} h: {substep.height}")
                 print(f"  x: {substep.loc_x} y: {substep.loc_y} z: {substep.loc_z}")
                 print(f"  description: {substep.description}")
+            elif isinstance(substep, WirelessPacketReceptionStep):
+                # If the substep is a NodeUpdateStep, print its information
+                print(f"  wireless_packet_id: {substep.wireless_packet_id}")
+                print(f"  step number: {substep.step_number}")
 
             print()
 
@@ -182,7 +184,8 @@ class StepProcessor:
             if packet_substep.from_id != packet_substep.to_id:
                 self.substeps[StepType.WIRED_PACKET].append(packet_substep)
 
-    def generate_transmitter_broadcast_substeps(self, broadcaster, num_steps, end_time, radius_constant, updated_node_data, end_time_constant):
+    def generate_transmitter_broadcast_substeps(self, broadcaster, num_steps, end_time, radius_constant,
+                                                updated_node_data, end_time_constant):
         broadcast_substeps = []
         if end_time is None:
             end_time = float(broadcaster.first_byte_transmission_time) + end_time_constant
@@ -195,17 +198,17 @@ class StepProcessor:
 
         # Calculate the time step for each substep
         time_step = (float(end_time) - float(broadcaster.first_byte_transmission_time)) / (num_steps - 1)
-
+        broadcaster_id = uuid.uuid4()
         # Generate the substeps
         for step in range(num_steps):
             # Calculate the time for the current substep
             substep_time = float(broadcaster.first_byte_transmission_time) + step * time_step
-            radius = radius_constant * step
+            radius = radius_constant * (step+1)
             # Create a BroadcastStep object for the current substep
-            broadcast_substep = BroadcastStep(
-                time=substep_time, loc_x=node.loc_x,
-                loc_y=node.loc_y, loc_z=node.loc_z,
-                radius=radius, step_number=step)
+            broadcast_substep = BroadcastStep(broadcast_id=broadcaster_id,
+                                              time=substep_time, loc_x=node.loc_x,
+                                              loc_y=node.loc_y, loc_z=node.loc_z,
+                                              radius=radius, step_number=step)
 
             # Append the BroadcastStep object to the list of substeps
             broadcast_substeps.append(broadcast_substep)
@@ -225,21 +228,23 @@ class StepProcessor:
             return
 
         # Calculate the time step for each substep
-        time_step = (float(broadcaster.first_byte_transmission_time) - float(wireless_packet_reception.first_byte_received_time)) / (
-                            num_steps - 1)
-
+        time_step = (float(wireless_packet_reception.first_byte_received_time) - float(
+            broadcaster.first_byte_transmission_time)) / (num_steps - 1)
+        wireless_packet_id = uuid.uuid4()
         # Generate the substeps
         for step in range(num_steps):
             # Calculate the time for the current substep
             substep_time = float(wireless_packet_reception.first_byte_received_time) + step * time_step
-            radius = radius_constant * step
+            radius = radius_constant * (step+1)
+
             # Create a WirelessReceptionStep object for the current substep
-            reception_substep = WirelessPacketReceptionStep(
-                time=substep_time, loc_x=node.loc_x,
-                loc_y=node.loc_y, loc_z=node.loc_z,
-                radius=radius, step_number=step,
-                broadcast_loc_x=broadcaster_node.loc_x, broadcast_loc_y=broadcaster_node.loc_y,
-                broadcast_loc_z=broadcaster_node.loc_z)
+            reception_substep = WirelessPacketReceptionStep(wireless_packet_id=wireless_packet_id,
+                                                            time=substep_time, loc_x=node.loc_x,
+                                                            loc_y=node.loc_y, loc_z=node.loc_z,
+                                                            radius=radius, step_number=step,
+                                                            broadcast_loc_x=broadcaster_node.loc_x,
+                                                            broadcast_loc_y=broadcaster_node.loc_y,
+                                                            broadcast_loc_z=broadcaster_node.loc_z)
 
             # Append the WirelessReceptionStep object to the list of substeps
             reception_substeps.append(reception_substep)

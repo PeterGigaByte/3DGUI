@@ -13,9 +13,9 @@ class Signal:
         points = np.column_stack((x, y, np.zeros_like(x)))
         return points
 
-    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, start_angle, end_angle, radius):
+    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, start_angle,
+                           end_angle, radius):
         arc_list = []
-
         for i in range(1, num_arcs + 1):
             points = vtk.vtkPoints()
 
@@ -52,3 +52,5 @@ class Signal:
             arc_list.append(actor)
 
         self.renderer.GetRenderWindow().Render()
+        return arc_list
+
