@@ -99,8 +99,8 @@ class EnvironmentRenderingApi:
         """Create the test visualizing view."""
         self.renderer.SetBackground(0.5, 0.5, 1)
         self.create_ground()
-        #self.create_broadcaster_signal(0, 0, 0, 0, 0, 0, 0, 0)
-        #self.remove_wifi_signal(0)
+        # self.create_broadcaster_signal(0, 0, 0, 0, 0, 0, 0, 0)
+        # self.remove_wifi_signal(0)
         # self.create_building(-100, -100, 0, 50, 100)
         # self.create_building(100, 100, 0, 50, 100)
         # self.create_node(0, 0, 10)
@@ -130,8 +130,14 @@ class EnvironmentRenderingApi:
             node.remove_from_renderer(renderer=self.renderer)
         self.nodes = []
 
+    def clear_all_signals(self):
+        """Remove all signals from the environment."""
+        for signal in self.signals:
+            self.signals[signal].remove_all_arcs()
+        self.signals = {}
+
     def create_broadcaster_signal(self, signal_id, x, y, z, num_arcs, arc_thickness, arc_resolution,
-                           normal, direction, radius):
+                                  normal, direction, radius):
         # Create BroadcasterSignal example
         broadcaster_signal = BroadcasterSignal(self.renderer)
         broadcaster_signal.create_broadcaster_signal_arcs(x=x, y=y, z=z, num_arcs=num_arcs, arc_thickness=arc_thickness,
@@ -148,4 +154,3 @@ class EnvironmentRenderingApi:
     def remove_wifi_signal(self, signal_id):
         self.signals[signal_id].remove_all_arcs()
         del self.signals[signal_id]
-

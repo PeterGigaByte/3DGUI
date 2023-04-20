@@ -181,6 +181,7 @@ class AnimationApi:
             time = self.substeps[self.current_step].time
         self.renderer_api.clear_all_packets()
         self.renderer_api.clear_all_nodes()
+        self.renderer_api.clear_all_signals()
         self.prepare_animation()
         if self.control_update_callback:
             self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", f"Time {time}",
