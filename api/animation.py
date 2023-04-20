@@ -122,12 +122,16 @@ class AnimationApi:
         self.clear_vtk_window()
 
     def clear_vtk_window(self):
+        if len(self.substeps) == 0:
+            substeps_size = 9999
+        else:
+            substeps_size = len(self.substeps)
         self.renderer_api.clear_all_packets()
         self.renderer_api.clear_all_nodes()
         self.prepare_animation()
         if self.control_update_callback:
             self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", "Time 0",
-                                         self.current_step, len(self.substeps))
+                                         self.current_step, substeps_size)
 
     def update_delay(self, new_delay):
         self.delay = new_delay

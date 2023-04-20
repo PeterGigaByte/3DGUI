@@ -159,7 +159,7 @@ class Environment(QMainWindow):
 
         # Top control frame init (ControlHorizontal)
         control_horizontal = ControlHorizontal(vtk_api=self.vtk_api, animation_api=self.animation_api,
-                                          bottom_dock_widget=self.bottom_dock_widget)
+                                               bottom_dock_widget=self.bottom_dock_widget)
         self.animation_api.set_control_update_callback(control_horizontal.update_status)
         self.animation_api.set_max_steps_callback(self.control_vertical.update_max_step_slider)
         self.animation_api.set_update_steps_callback(self.control_vertical.update_value_steps)
@@ -175,7 +175,6 @@ class Environment(QMainWindow):
 
         # Bottom Time frame init
         bottom_frame = BottomFrame(self)
-
 
         # Adding widgets
         layout.addWidget(control_horizontal, 0, 0, 1, 2)  # ControlHorizontal spans 2 columns
@@ -214,16 +213,10 @@ class Environment(QMainWindow):
             # and create the corresponding nodes and buildings in your visualization.
             # 1. parse_file
             self.bottom_dock_widget.log(f"File opened: {file_path}")
-            # reset everything
-            self.animation_api.animation_started = False
-            self.animation_api.data = None
-            self.animation_api.substeps = []
-            self.animation_api.clear_vtk_window()
-            self.animation_api.current_step = 0
-            self.animation_api.delay = 0
-            self.animation_api.steps_per_event = 1
+            # reset everything - to avoid issues when opening second file
+            self.reset_when_file_open()
+            # set data
             self.animation_api.set_data(self.parser_api.parse_file(file_path))
-
             # 2. Update info from parsed data
             self.left_dock_widget.clear_widgets()
             self.left_dock_widget.update_list_widget(self.animation_api.data.content)
@@ -234,3 +227,14 @@ class Environment(QMainWindow):
             # 5. remove everything on vtk window create nodes and building
             # 6. save logic
             self.visualizing_view()
+
+    def reset_when_file_open(self):
+        self.animation_api.animation_started = False
+        self.animation_api.data = None
+        self.animation_api.substeps = []
+        self.step_processor.substeps = self.step_processor.substeps = {step_type: [] for step_type in
+                                                                       self.step_processor.step_types}
+        self.animation_api.clear_vtk_window()
+        self.animation_api.current_step = 0
+        self.animation_api.delay = 0
+        self.animation_api.steps_per_event = 1
