@@ -1,5 +1,5 @@
 """
-This element describes a packet over wired links being transmitted at some node and received at another.
+This element describes a packet_object over wired links being transmitted at some node_object and received at another.
 
 The reception details are described in its associated rx element
 """
@@ -48,10 +48,19 @@ class NodeUpdateStep(Step):
 
 
 class BroadcastStep(Step):
-    def __init__(self, time):
+    def __init__(self, time, loc_x, loc_y, step_number, loc_z=0):
         super().__init__(time, StepType.BROADCAST)
+        self.loc_x = loc_x
+        self.loc_y = loc_y
+        self.loc_z = loc_z
+        self.step_number = step_number
 
 
 class WirelessPacketReceptionStep(Step):
-    def __init__(self, time):
+    def __init__(self, time, loc_x, loc_y, step_number, loc_z=0):
         super().__init__(time, StepType.WIRELESS_PACKET_RECEPTION)
+        self.loc_x = loc_x
+        self.loc_y = loc_y
+        self.loc_z = loc_z
+        self.step_number = step_number
+

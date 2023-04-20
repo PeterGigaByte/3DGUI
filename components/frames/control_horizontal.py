@@ -40,7 +40,7 @@ class ControlHorizontal(QFrame):
         self.progress_bar.setValue(0)
         button_layout.addWidget(self.progress_bar)
 
-        # Move ground up button
+        # Move ground_object up button
         self.move_ground_up_button = QPushButton("Move Ground Up")
         button_layout.addWidget(self.move_ground_up_button)
         self.move_ground_up_timer = QTimer(self)
@@ -48,7 +48,7 @@ class ControlHorizontal(QFrame):
         self.move_ground_up_button.pressed.connect(self.move_ground_up_timer.start)
         self.move_ground_up_button.released.connect(self.move_ground_up_timer.stop)
 
-        # Move ground down button
+        # Move ground_object down button
         self.move_ground_down_button = QPushButton("Move Ground Down")
         button_layout.addWidget(self.move_ground_down_button)
         self.move_ground_down_timer = QTimer(self)
@@ -95,12 +95,12 @@ class ControlHorizontal(QFrame):
     def on_move_ground_up_button_clicked(self):
         self.bottom_dock_widget.log("Move Ground Up button pressed - Ground moved up.")
         self.animation_api.renderer_api.ground.move_ground(1,
-                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground up
+                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground_object up
 
     def on_move_ground_down_button_clicked(self):
         self.bottom_dock_widget.log("Move Ground Down button pressed - Ground moved down.")
         self.animation_api.renderer_api.ground.move_ground(-1,
-                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground down
+                                                           self.animation_api.renderer_api.renderer)  # step size for moving the ground_object down
 
     def show_progress_bar(self):
         """Show the progress bar."""

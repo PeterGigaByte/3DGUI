@@ -20,10 +20,10 @@ class LeftDockWidget(QDockWidget):
         self.tree_widget.setHeaderHidden(True)
         layout.addWidget(self.tree_widget)
 
-        # Initialize empty node dictionary
+        # Initialize empty node_object dictionary
         self.nodes = {}
 
-        # Connect to the list widget's item selection changed signal and update the tree widget's content accordingly
+        # Connect to the list widget's item selection changed signal_object and update the tree widget's content accordingly
         self.list_widget.itemSelectionChanged.connect(self.update_tree_widget)
 
         # Create a widget to hold the layout and set it as the dock widget's widget
@@ -68,7 +68,7 @@ class LeftDockWidget(QDockWidget):
             selected_item = selected_items[0].text()
             node_id = selected_item.split(" ")[1]
 
-            # Clear tree widget and display selected node properties
+            # Clear tree widget and display selected node_object properties
             self.tree_widget.clear()
             for prop in self.nodes[node_id]["properties"]:
                 # Clone the QTreeWidgetItem before adding it to the tree widget

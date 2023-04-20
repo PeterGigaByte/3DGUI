@@ -19,7 +19,7 @@ class CustomSpinBox(QSpinBox):
     def __init__(self, *args, **kwargs):
         super(CustomSpinBox, self).__init__(*args, **kwargs)
         self.setLineEdit(CustomLineEdit())  # Set the custom QLineEdit
-        self.lineEdit().clicked.connect(self.editingStarted.emit)  # Connect the clicked signal
+        self.lineEdit().clicked.connect(self.editingStarted.emit)  # Connect the clicked signal_object
 
     def focusInEvent(self, event):
         super(CustomSpinBox, self).focusInEvent(event)

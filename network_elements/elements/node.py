@@ -1,6 +1,6 @@
 from network_elements.tags import NodeTags
 
-"""<node>"""
+"""<node_object>"""
 
 
 class Node:

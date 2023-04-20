@@ -6,14 +6,16 @@ from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
 
 class AnimationApi:
-    def __init__(self, renderer_api):
+    def __init__(self, renderer_api, bottom_dock_widget):
         self.renderer_api = renderer_api
+        self.bottom_dock_widget = bottom_dock_widget
         self.data = None
         self.substeps = []
         self.current_step = 0
         self.delay = 0
         self.steps_per_event = 1
         self.is_paused = False
+        self.was_paused = False
         self.max_steps_callback = None
         self.steps_update_callback = None
         self.control_update_callback = None
@@ -31,6 +33,12 @@ class AnimationApi:
     def prepare_animation(self):
         if self.data and self.data.content:
             nodes = get_objects_by_type(self.data.content, Node)
+            self.control_update_callback(
+                f"Step {self.current_step} / {len(self.substeps)}",
+                f"Time {0}",
+                self.current_step,
+                len(self.substeps),
+            )
             for node in nodes:
                 self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
                                               description="Node " + node.id)
@@ -68,6 +76,8 @@ class AnimationApi:
 
             if steps_executed >= self.steps_per_event:
                 break
+            if self.current_step == len(self.substeps):
+                self.bottom_dock_widget.log("Animation finished.")
 
         self.start_timer()
 
@@ -86,13 +96,13 @@ class AnimationApi:
         elif step.step_number == 19 and packet_id in self.renderer_api.packets:
             if packet_id in self.renderer_api.packets:
                 self.renderer_api.remove_packet(packet_id)
-        # Update the position of the packet for intermediate steps
+        # Update the position of the packet_object for intermediate steps
         elif packet_id in self.renderer_api.packets:
             x, y, z = step.loc_x, step.loc_y, step.loc_z
             self.renderer_api.update_packet_position(packet_id, x, y, z)
 
     def handle_node_update(self, step):
-        # Find the node with the matching ID
+        # Find the node_object with the matching ID
         node = get_rendering_node_by_id(self.renderer_api.nodes, step.node_id)
         node.update_attributes(step, self.renderer_api.renderer)
 
@@ -110,6 +120,7 @@ class AnimationApi:
             self.stop_timer()
 
     def pause_animation(self):
+        self.was_paused = self.is_paused
         self.is_paused = True
         self.stop_timer()
 
@@ -119,18 +130,22 @@ class AnimationApi:
 
     def reset_animation(self):
         self.current_step = 0
+        self.delay = 0
+        self.steps_per_event = 1
         self.clear_vtk_window()
 
     def clear_vtk_window(self):
         if len(self.substeps) == 0:
             substeps_size = 9999
+            time = 0
         else:
             substeps_size = len(self.substeps)
+            time = self.substeps[self.current_step].time
         self.renderer_api.clear_all_packets()
         self.renderer_api.clear_all_nodes()
         self.prepare_animation()
         if self.control_update_callback:
-            self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", "Time 0",
+            self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", f"Time {time}",
                                          self.current_step, substeps_size)
 
     def update_delay(self, new_delay):

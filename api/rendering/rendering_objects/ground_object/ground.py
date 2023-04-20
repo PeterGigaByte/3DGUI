@@ -14,7 +14,7 @@ class Ground:
         self.actor = self.create_actor()
 
     def create_actor(self):
-        """Create a ground plane for the environment."""
+        """Create a ground_object plane for the environment."""
         plane = vtk.vtkPlaneSource()
         plane.SetResolution(self.resolution[0], self.resolution[1])
         plane.SetOrigin(self.origin[0], self.origin[1], self.origin[2])
@@ -34,7 +34,7 @@ class Ground:
         renderer.AddActor(self.actor)
 
     def move_ground(self, step_size, renderer):
-        """Move the ground up or down by a specified step size."""
+        """Move the ground_object up or down by a specified step size."""
         renderer.RemoveActor(self.actor)
         self.origin = (self.origin[0], self.origin[1], self.origin[2] + step_size)
         self.point1 = (self.point1[0], self.point1[1], self.point1[2] + step_size)

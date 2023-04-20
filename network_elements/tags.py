@@ -12,7 +12,7 @@ from enum import Enum
 
 class NetworkElementTags(Enum):
     ANIM_TAG = 'anim'
-    NODE_TAG = 'node'
+    NODE_TAG = 'node_object'
     NU_TAG = 'nu'
     NONP2PLINKPROPERTIES_TAG = 'nonp2plinkproperties'
     IP_TAG = 'ip'

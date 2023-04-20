@@ -4,16 +4,16 @@ from network_elements.tags import PrTags
 
 
 class Broadcaster:
-    def __init__(self, u_id, f_id, fb_tx, meta_info):
-        self.u_id = u_id
-        self.f_id = f_id
-        self.fb_tx = fb_tx
+    def __init__(self, u_id, f_id, first_byte_transmission_time, meta_info):
+        self.unique_id = u_id
+        self.from_id = f_id
+        self.first_byte_transmission_time = first_byte_transmission_time
         self.meta_info = meta_info
 
     def to_dict(self):
         return {
-            PrTags.U_ID_TAG.value: self.u_id,
-            PrTags.F_ID_TAG.value: self.f_id,
-            PrTags.FB_TX_TAG.value: self.fb_tx,
+            PrTags.U_ID_TAG.value: self.unique_id,
+            PrTags.F_ID_TAG.value: self.from_id,
+            PrTags.FB_TX_TAG.value: self.first_byte_transmission_time,
             PrTags.META_INFO_TAG.value: self.meta_info
         }

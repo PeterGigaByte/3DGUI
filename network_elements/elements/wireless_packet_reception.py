@@ -4,16 +4,16 @@ from network_elements.tags import WprTags
 
 
 class WirelessPacketReception:
-    def __init__(self, u_id, t_id, fb_rx, lb_rx):
-        self.u_id = u_id
-        self.t_id = t_id
-        self.fb_rx = fb_rx
-        self.lb_rx = lb_rx
+    def __init__(self, unique_id, to_id, first_byte_received_time, last_byte_received_time):
+        self.unique_id = unique_id
+        self.to_id = to_id
+        self.first_byte_received_time = first_byte_received_time
+        self.last_byte_received_time = last_byte_received_time
 
     def to_dict(self):
         return {
-            WprTags.U_ID_TAG.value: self.u_id,
-            WprTags.T_ID_TAG.value: self.t_id,
-            WprTags.FB_RX_TAG.value: self.fb_rx,
-            WprTags.LB_RX_TAG.value: self.lb_rx
+            WprTags.U_ID_TAG.value: self.unique_id,
+            WprTags.T_ID_TAG.value: self.to_id,
+            WprTags.FB_RX_TAG.value: self.first_byte_received_time,
+            WprTags.LB_RX_TAG.value: self.last_byte_received_time
         }

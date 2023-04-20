@@ -15,7 +15,7 @@ class Building:
         self.building_actor = self.create_actor()
 
     def create_actor(self):
-        """Create a building at the specified location."""
+        """Create a building_object at the specified location."""
         cube = vtk.vtkCubeSource()
         cube.SetXLength(self.width)
         cube.SetYLength(self.width)

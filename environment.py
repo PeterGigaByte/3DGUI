@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import (
 
 from api.animation import AnimationApi
 from api.parser import ParserAPI
-from api.rendering import EnvironmentRenderingApi
+from api.rendering.rendering import EnvironmentRenderingApi
+
 from components.dock_widgets.bottom_dock_widget import BottomDockWidget
 from components.dock_widgets.left_dock_widget import LeftDockWidget
 from components.dock_widgets.right_dock_widget import RightDockWidget
@@ -53,6 +54,7 @@ class Environment(QMainWindow):
         super(Environment, self).__init__(parent)
 
         # Initialize class attributes
+        self.control_horizontal = None
         self.control_vertical = None
         self.bottom_dock_widget = None
         self.interactor = None
@@ -77,7 +79,7 @@ class Environment(QMainWindow):
         self.step_processor = StepProcessor()
 
         # Initialize AnimationAPI
-        self.animation_api = AnimationApi(self.vtk_api)
+        self.animation_api = AnimationApi(self.vtk_api, self.bottom_dock_widget)
 
         self.interactor_style = CustomInteractorStyle()
 
@@ -158,9 +160,9 @@ class Environment(QMainWindow):
         self.control_vertical = ControlVertical(self.animation_api)
 
         # Top control frame init (ControlHorizontal)
-        control_horizontal = ControlHorizontal(vtk_api=self.vtk_api, animation_api=self.animation_api,
+        self.control_horizontal = ControlHorizontal(vtk_api=self.vtk_api, animation_api=self.animation_api,
                                                bottom_dock_widget=self.bottom_dock_widget)
-        self.animation_api.set_control_update_callback(control_horizontal.update_status)
+        self.animation_api.set_control_update_callback(self.control_horizontal .update_status)
         self.animation_api.set_max_steps_callback(self.control_vertical.update_max_step_slider)
         self.animation_api.set_update_steps_callback(self.control_vertical.update_value_steps)
 
@@ -177,7 +179,7 @@ class Environment(QMainWindow):
         bottom_frame = BottomFrame(self)
 
         # Adding widgets
-        layout.addWidget(control_horizontal, 0, 0, 1, 2)  # ControlHorizontal spans 2 columns
+        layout.addWidget(self.control_horizontal , 0, 0, 1, 2)  # ControlHorizontal spans 2 columns
         layout.addWidget(self.interactor, 1, 0)  # VTK window
         layout.addWidget(self.control_vertical, 1, 1)  # ControlVertical
         layout.addWidget(bottom_frame, 2, 0, 1, 2)  # BottomFrame spans 2 columns
@@ -217,24 +219,21 @@ class Environment(QMainWindow):
             self.reset_when_file_open()
             # set data
             self.animation_api.set_data(self.parser_api.parse_file(file_path))
+            # 4 process data and set to animation
+            self.animation_api.set_substeps(self.step_processor.process_steps(self.animation_api.data))
             # 2. Update info from parsed data
             self.left_dock_widget.clear_widgets()
             self.left_dock_widget.update_list_widget(self.animation_api.data.content)
             # 3 prepare environment
             self.animation_api.prepare_animation()
-            # 4 process data and set to animation
-            self.animation_api.set_substeps(self.step_processor.process_steps(self.animation_api.data))
-            # 5. remove everything on vtk window create nodes and building
+            # 5. remove everything on vtk window create nodes and building_object
             # 6. save logic
             self.visualizing_view()
 
     def reset_when_file_open(self):
-        self.animation_api.animation_started = False
-        self.animation_api.data = None
         self.animation_api.substeps = []
         self.step_processor.substeps = self.step_processor.substeps = {step_type: [] for step_type in
                                                                        self.step_processor.step_types}
-        self.animation_api.clear_vtk_window()
-        self.animation_api.current_step = 0
-        self.animation_api.delay = 0
-        self.animation_api.steps_per_event = 1
+        self.animation_api.data = None
+        self.animation_api.reset_animation()
+        self.control_horizontal.pause_button.setText("Pause/Resume")
