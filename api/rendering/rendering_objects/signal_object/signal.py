@@ -6,20 +6,20 @@ class Signal:
     def __init__(self, renderer):
         self.renderer = renderer
 
-    def create_arc_points(self, radius, start_angle, end_angle, spacing, num_points=50):
+    def create_arc_points(self, radius, start_angle, end_angle, num_points=50):
         angles = np.linspace(start_angle, end_angle, num_points)
-        x = (radius + spacing) * np.cos(np.radians(angles))
-        y = (radius + spacing) * np.sin(np.radians(angles))
+        x = radius * np.cos(np.radians(angles))
+        y = radius * np.sin(np.radians(angles))
         points = np.column_stack((x, y, np.zeros_like(x)))
         return points
 
-    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, start_angle, end_angle, spacing=0, first_arc_distance=10):
+    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, start_angle, end_angle, radius):
         arc_list = []
 
         for i in range(1, num_arcs + 1):
             points = vtk.vtkPoints()
 
-            arc_points = self.create_arc_points(i * 10 + spacing * (i - 1) + first_arc_distance * (i == 1), start_angle, end_angle, arc_resolution)
+            arc_points = self.create_arc_points(radius, start_angle, end_angle, arc_resolution)
 
             for point in arc_points:
                 points.InsertNextPoint(point)

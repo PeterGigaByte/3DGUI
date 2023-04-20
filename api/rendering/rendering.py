@@ -24,6 +24,7 @@ class EnvironmentRenderingApi:
         self.nodes = []
         self.buildings = []
         self.packets = []
+        self.signals = {}
         self.packets: Dict[uuid.UUID, Packet] = {}
 
     def create_ground(self):
@@ -98,7 +99,7 @@ class EnvironmentRenderingApi:
         """Create the test visualizing view."""
         self.renderer.SetBackground(0.5, 0.5, 1)
         self.create_ground()
-        self.create_broadcaster_signal(1, 1, 1, 1, 1, 1, 1)
+        self.create_wifi_signal(1, 1, 1, 1, 1, 1, 1)
         # self.create_building(-100, -100, 0, 50, 100)
         # self.create_building(100, 100, 0, 50, 100)
         # self.create_node(0, 0, 10)
@@ -131,11 +132,12 @@ class EnvironmentRenderingApi:
     def create_broadcaster_signal(self, x, y, z, num_arcs, arc_thickness, arc_resolution, spacing_factor):
         # Create BroadcasterSignal example
         broadcaster_signal = BroadcasterSignal(self.renderer)
-        broadcaster_signal.create_broadcaster_signal_arcs(x=20, y=0, z=0, num_arcs=3, arc_thickness=0.5,
-                                                          arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 1), spacing=1, first_arc_distance=0)
+        broadcaster_signal.create_broadcaster_signal_arcs(x=20, y=0, z=0, num_arcs=1, arc_thickness=0.5,
+                                                          arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 1),
+                                                          radius=15)
 
     def create_wifi_signal(self, x, y, z, num_arcs, arc_thickness, arc_resolution, spacing_factor):
         # Create wifi example
         wifi_signal = WifiSignal(self.renderer)
-        wifi_signal.create_wifi_signal_arcs(x=0, y=0, z=0, num_arcs=3, arc_thickness=0.5, arc_resolution=50,
-                                            normal=(1, 0, 0), direction=(10, 10, 10), spacing=10, first_arc_distance=0)
+        wifi_signal.create_wifi_signal_arcs(x=0, y=0, z=0, num_arcs=1, arc_thickness=0.5, arc_resolution=50,
+                                            normal=(1, 0, 0), direction=(10, 10, 10), radius=5)

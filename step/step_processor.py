@@ -24,7 +24,8 @@ class StepProcessor:
         Returns:
         - A sorted list of all substeps for the provided data
         """
-        # Get the node_object data, node_object update data, and wired packet_object data from the content of the provided data
+        # Get the node_object data, node_object update data, and wired packet_object data from the content of the
+        # provided data
         node_data = get_objects_by_type(data.content, Node)
         node_update_data = get_objects_by_type(data.content, NodeUpdate)
         wired_packet_data = get_objects_by_type(data.content, WiredPacket)
@@ -34,9 +35,12 @@ class StepProcessor:
         # Set the number of steps to interpolate between each substep for wired packets
         num_steps_wired_packet_animation = 20
         # broadcast step parameters
-        num_steps_broadcast_transmission = 20
+        num_steps_broadcast_transmission = 4
         # wireless packet_object reception step parameters
-        num_steps_wireless_packet_reception = 20
+        num_steps_wireless_packet_reception = 4
+        # first radius
+        radius_constant = 5
+        end_time_constant = 0.000010
 
         # Combine the node_object update data and wired packet_object data
         combined_data = node_update_data + wired_packet_data + broadcaster_data + wireless_packet_data
@@ -51,9 +55,9 @@ class StepProcessor:
         wireless_packet_max_time_map = {}
 
         for item in wireless_packet_data:
-            if item.unique_id not in wireless_packet_max_time_map or item.time \
+            if item.unique_id not in wireless_packet_max_time_map or item.first_byte_received_time \
                     > wireless_packet_max_time_map[item.unique_id]:
-                wireless_packet_max_time_map[item.unique_id] = item.time
+                wireless_packet_max_time_map[item.unique_id] = item.first_byte_received_time
         broadcaster_transmitted = {}
         # Loop through the combined data and generate substeps for each item
         for item in combined_data:
@@ -72,16 +76,21 @@ class StepProcessor:
                 self.generate_wired_packet_substeps(item, num_steps_wired_packet_animation, updated_node_data)
             elif isinstance(item, Broadcaster):
                 # If the item is a Broadcaster, do nothing (for now)
+                end_time = None
+                try:
+                    end_time = wireless_packet_max_time_map[item.unique_id]
+                except KeyError:
+                    print("End time was not defined. Constant will be used")
                 self.generate_transmitter_broadcast_substeps(item, num_steps_broadcast_transmission,
-                                                             wireless_packet_max_time_map[item.unique_id],
-                                                             updated_node_data)
+                                                             end_time,
+                                                             radius_constant, updated_node_data, end_time_constant)
                 broadcaster_transmitted[item.unique_id] = item
                 pass
             elif isinstance(item, WirelessPacketReception):
                 # If the item is a WirelessPacketReception, do nothing (for now)
                 self.generate_wireless_packet_reception_substeps(item, num_steps_wireless_packet_reception,
                                                                  broadcaster_transmitted[item.unique_id],
-                                                                 updated_node_data)
+                                                                 radius_constant, updated_node_data)
 
                 pass
 
@@ -173,26 +182,30 @@ class StepProcessor:
             if packet_substep.from_id != packet_substep.to_id:
                 self.substeps[StepType.WIRED_PACKET].append(packet_substep)
 
-    def generate_transmitter_broadcast_substeps(self, broadcaster, num_steps, end_time, updated_node_data):
+    def generate_transmitter_broadcast_substeps(self, broadcaster, num_steps, end_time, radius_constant, updated_node_data, end_time_constant):
         broadcast_substeps = []
-
+        if end_time is None:
+            end_time = float(broadcaster.first_byte_transmission_time) + end_time_constant
         # Get the node_object associated with the broadcaster using the from_id (f_id)
         node = next((node for node in updated_node_data if node.id == broadcaster.from_id), None)
 
         if not node:
-            # If the node_object is not found, return an empty list
+            # If the node is not found, return an empty list
             return
 
         # Calculate the time step for each substep
-        time_step = (end_time - broadcaster.first_byte_transmission_time) / (num_steps - 1)
+        time_step = (float(end_time) - float(broadcaster.first_byte_transmission_time)) / (num_steps - 1)
 
         # Generate the substeps
         for step in range(num_steps):
             # Calculate the time for the current substep
-            substep_time = broadcaster.first_byte_transmission_time + step * time_step
-
+            substep_time = float(broadcaster.first_byte_transmission_time) + step * time_step
+            radius = radius_constant * step
             # Create a BroadcastStep object for the current substep
-            broadcast_substep = BroadcastStep(time=substep_time)
+            broadcast_substep = BroadcastStep(
+                time=substep_time, loc_x=node.loc_x,
+                loc_y=node.loc_y, loc_z=node.loc_z,
+                radius=radius, step_number=step)
 
             # Append the BroadcastStep object to the list of substeps
             broadcast_substeps.append(broadcast_substep)
@@ -200,28 +213,33 @@ class StepProcessor:
         self.substeps[StepType.BROADCAST].extend(broadcast_substeps)
 
     def generate_wireless_packet_reception_substeps(self, wireless_packet_reception, num_steps, broadcaster,
-                                                    updated_node_data):
+                                                    radius_constant, updated_node_data):
         reception_substeps = []
 
-        # Get the node_object associated with the wireless packet_object reception using the to_id (t_id)
+        # Get the node_object associated with the wireless packet reception using the to_id (t_id)
         node = next((node for node in updated_node_data if node.id == wireless_packet_reception.to_id), None)
+        broadcaster_node = next((node for node in updated_node_data if node.id == broadcaster.from_id), None)
 
         if not node:
-            # If the node_object is not found, return an empty list
+            # If the node is not found, return an empty list
             return
 
         # Calculate the time step for each substep
-        time_step = (
-                            wireless_packet_reception.last_byte_received_time - wireless_packet_reception.first_byte_received_time) / (
+        time_step = (float(broadcaster.first_byte_transmission_time) - float(wireless_packet_reception.first_byte_received_time)) / (
                             num_steps - 1)
 
         # Generate the substeps
         for step in range(num_steps):
             # Calculate the time for the current substep
-            substep_time = wireless_packet_reception.first_byte_received_time + step * time_step
-
+            substep_time = float(wireless_packet_reception.first_byte_received_time) + step * time_step
+            radius = radius_constant * step
             # Create a WirelessReceptionStep object for the current substep
-            reception_substep = WirelessPacketReceptionStep(time=substep_time)
+            reception_substep = WirelessPacketReceptionStep(
+                time=substep_time, loc_x=node.loc_x,
+                loc_y=node.loc_y, loc_z=node.loc_z,
+                radius=radius, step_number=step,
+                broadcast_loc_x=broadcaster_node.loc_x, broadcast_loc_y=broadcaster_node.loc_y,
+                broadcast_loc_z=broadcaster_node.loc_z)
 
             # Append the WirelessReceptionStep object to the list of substeps
             reception_substeps.append(reception_substep)

@@ -87,6 +87,10 @@ class AnimationApi:
                 self.handle_packet_step(step)
             case StepType.NODE_UPDATE:
                 self.handle_node_update(step)
+            case StepType.BROADCAST:
+                self.handle_broadcast(step)
+            case StepType.WIRELESS_PACKET_RECEPTION:
+                self.handle_wireless_packet_reception(step)
 
     def handle_packet_step(self, step):
         packet_id = step.packet_id
@@ -105,6 +109,12 @@ class AnimationApi:
         # Find the node_object with the matching ID
         node = get_rendering_node_by_id(self.renderer_api.nodes, step.node_id)
         node.update_attributes(step, self.renderer_api.renderer)
+
+    def handle_broadcast(self, step):
+        self.bottom_dock_widget.log("Handle broadcast " + str(step.step_number))
+
+    def handle_wireless_packet_reception(self, step):
+        self.bottom_dock_widget.log("Handle wireless packet reception " + str(step.step_number))
 
     def start_timer(self):
         self.timer_step.start(self.delay)
