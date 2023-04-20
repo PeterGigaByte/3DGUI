@@ -29,11 +29,12 @@ class AnimationApi:
         self.control_update_callback = callback
 
     def prepare_animation(self):
-        nodes = get_objects_by_type(self.data.content, Node)
-        for node in nodes:
-            self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
-                                          description="Node " + node.id)
-        self.renderer_api.renderer.GetRenderWindow().Render()
+        if self.data and self.data.content:
+            nodes = get_objects_by_type(self.data.content, Node)
+            for node in nodes:
+                self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
+                                              description="Node " + node.id)
+            self.renderer_api.renderer.GetRenderWindow().Render()
 
     def animate_substeps(self):
         if not self.animation_started:
@@ -57,6 +58,8 @@ class AnimationApi:
                     self.current_step,
                     len(self.substeps),
                 )
+            if self.steps_update_callback:
+                self.steps_update_callback(self.current_step)
             if steps_executed % render_every_n_steps == 0:
                 self.renderer_api.renderer.GetRenderWindow().Render()
                 QCoreApplication.processEvents()  # Process events during animation
@@ -132,17 +135,20 @@ class AnimationApi:
     def update_steps_per_event(self, new_steps_per_event):
         self.steps_per_event = new_steps_per_event
 
+    def set_update_steps_callback(self, callback):
+        self.steps_update_callback = callback
+
     def set_current_step(self, new_step):
         self.current_step = new_step
         self.clear_vtk_window()
         for i in range(new_step):
-            step = self.substeps[i]
-            self.handle_step(step)
+            if i < len(self.substeps):
+                step = self.substeps[i]
+                self.handle_step(step)
         self.renderer_api.renderer.GetRenderWindow().Render()
 
     def set_max_steps_callback(self, callback):
         self.max_steps_callback = callback
-
 
     def set_substeps(self, substeps):
         self.substeps = substeps

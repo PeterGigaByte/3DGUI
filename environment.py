@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QMainWindow, QMenu, QFrame, QVBoxLayout, QFileDialog, QStackedWidget, QLabel
+    QMainWindow, QMenu, QFrame, QVBoxLayout, QFileDialog, QStackedWidget, QLabel, QGridLayout
 )
 
 from api.animation import AnimationApi
@@ -10,16 +10,42 @@ from components.dock_widgets.bottom_dock_widget import BottomDockWidget
 from components.dock_widgets.left_dock_widget import LeftDockWidget
 from components.dock_widgets.right_dock_widget import RightDockWidget
 from components.frames.bottom import BottomFrame
-from components.frames.control import ControlFrame
+from components.frames.control_horizontal import ControlHorizontal
+from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
-from network_elements.elements import Node
-
 from parsers.xml.tree_element import ElementTreeXMLParser
 from step.step_processor import StepProcessor
-from utils.manage import get_objects_by_type
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
+
+"""A class that represents an environment visualization.
+
+This class is a PyQt5-based GUI that allows users to open and visualize files containing data about nodes and buildings.
+The GUI includes a menu bar with options to open files, switch between different views, and access help.
+The visualization itself is created using the VTK library and allows users to control the animation and view settings.
+
+Attributes:
+    bottom_dock_widget (BottomDockWidget): A widget that displays status updates and logs.
+    interactor (KeyPressInteractor): A custom interactor for handling keyboard inputs.
+    visualizing_frame (QFrame): A frame for displaying the VTK visualization.
+    left_dock_widget (LeftDockWidget): A widget for displaying information about nodes.
+    right_dock_widget (RightDockWidget): A widget for displaying information about buildings.
+    parser_api (ParserAPI): An API for parsing files containing data about nodes and buildings.
+    vtk_api (EnvironmentRenderingApi): An API for rendering the environment using VTK.
+    step_processor (StepProcessor): A processor for breaking down animation steps into substeps.
+    animation_api (AnimationApi): An API for controlling the animation.
+    stacked_widget (QStackedWidget): A widget for switching between different views.
+
+Methods:
+    create_menu(): Creates the menu bar for the application.
+    visualizing_view(): Switches to the visualizing view.
+    settings_view(): Switches to the settings view.
+    manage_custom_view(): Switches to the manage custom objects view.
+    create_visualizing_view(): Creates the visualizing view.
+    showEvent(event): Handles show events for the QMainWindow.
+    open_file(): Opens a file and processes its contents.
+"""
 
 
 class Environment(QMainWindow):
@@ -27,6 +53,7 @@ class Environment(QMainWindow):
         super(Environment, self).__init__(parent)
 
         # Initialize class attributes
+        self.control_vertical = None
         self.bottom_dock_widget = None
         self.interactor = None
         self.visualizing_frame = None
@@ -115,7 +142,6 @@ class Environment(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.manage_custom_view_widget)
 
     def create_visualizing_view(self):
-        """Create the visualizing view."""
         visualizing_view = QFrame(self)
         self.setCentralWidget(visualizing_view)
 
@@ -126,13 +152,17 @@ class Environment(QMainWindow):
         self.interactor.setFocusPolicy(Qt.StrongFocus)
         self.interactor.setFocus()
 
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Visualisation view"))
+        layout = QGridLayout()
 
-        # Top control frame init
-        control_frame = ControlFrame(vtk_api=self.vtk_api, animation_api=self.animation_api, bottom_dock_widget=self.bottom_dock_widget)
-        self.animation_api.set_control_update_callback(control_frame.update_status)
-        self.animation_api.set_max_steps_callback(control_frame.update_max_step_slider)
+        # Create the ControlVertical instance
+        self.control_vertical = ControlVertical(self.animation_api)
+
+        # Top control frame init (ControlHorizontal)
+        control_horizontal = ControlHorizontal(vtk_api=self.vtk_api, animation_api=self.animation_api,
+                                          bottom_dock_widget=self.bottom_dock_widget)
+        self.animation_api.set_control_update_callback(control_horizontal.update_status)
+        self.animation_api.set_max_steps_callback(self.control_vertical.update_max_step_slider)
+        self.animation_api.set_update_steps_callback(self.control_vertical.update_value_steps)
 
         # Left dock Widget frame init
         self.addDockWidget(Qt.LeftDockWidgetArea, self.left_dock_widget)
@@ -146,10 +176,12 @@ class Environment(QMainWindow):
         # Bottom Time frame init
         bottom_frame = BottomFrame(self)
 
+
         # Adding widgets
-        layout.addWidget(control_frame)
-        layout.addWidget(self.interactor)
-        layout.addWidget(bottom_frame)
+        layout.addWidget(control_horizontal, 0, 0, 1, 2)  # ControlHorizontal spans 2 columns
+        layout.addWidget(self.interactor, 1, 0)  # VTK window
+        layout.addWidget(self.control_vertical, 1, 1)  # ControlVertical
+        layout.addWidget(bottom_frame, 2, 0, 1, 2)  # BottomFrame spans 2 columns
 
         visualizing_view.setLayout(layout)
 
@@ -182,7 +214,16 @@ class Environment(QMainWindow):
             # and create the corresponding nodes and buildings in your visualization.
             # 1. parse_file
             self.bottom_dock_widget.log(f"File opened: {file_path}")
+            # reset everything
+            self.animation_api.animation_started = False
+            self.animation_api.data = None
+            self.animation_api.substeps = []
+            self.animation_api.clear_vtk_window()
+            self.animation_api.current_step = 0
+            self.animation_api.delay = 0
+            self.animation_api.steps_per_event = 1
             self.animation_api.set_data(self.parser_api.parse_file(file_path))
+
             # 2. Update info from parsed data
             self.left_dock_widget.clear_widgets()
             self.left_dock_widget.update_list_widget(self.animation_api.data.content)
