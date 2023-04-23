@@ -46,11 +46,24 @@ class Signal:
             actor.SetMapper(mapper)
             actor.GetProperty().SetColor(0, 0, 1)
             actor.SetPosition(x, y, z)
-            actor.RotateWXYZ(90, *normal)
-            actor.RotateWXYZ(90, *direction)
+
+            # Calculate the angle between the z-axis and the normal
+            angle_normal = np.arccos(np.dot(normal, (0, 0, 1)) / np.linalg.norm(normal)) * 180 / np.pi
+            # Calculate the angle between the z-axis and the direction
+            angle_direction = np.arccos(np.dot(direction, (0, 0, 1)) / np.linalg.norm(direction)) * 180 / np.pi
+
+            # Calculate the rotation axis for the normal and direction
+            rotation_axis_normal = np.cross((0, 0, 1), normal)
+            rotation_axis_direction = np.cross((0, 0, 1), direction)
+
+            # Rotate the actor using the calculated angles and rotation axes
+            actor.RotateWXYZ(angle_normal, *rotation_axis_normal)
+            actor.RotateWXYZ(angle_direction, *rotation_axis_direction)
+
             self.renderer.AddActor(actor)
             arc_list.append(actor)
 
         self.renderer.GetRenderWindow().Render()
         return arc_list
+
 

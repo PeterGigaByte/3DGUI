@@ -9,7 +9,7 @@ class Node:
         self.sys_id = sys_id
         self.loc_x = loc_x
         self.loc_y = loc_y
-        self.loc_z = loc_z
+        self.loc_z = loc_z if loc_z is not None else 0
 
     def to_dict(self):
         return {

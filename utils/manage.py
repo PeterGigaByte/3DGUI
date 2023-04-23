@@ -5,7 +5,10 @@ def get_objects_by_type(objects, object_type):
 def get_node_coordinates_by_id(nodes, searched_node_id):
     for node in nodes:
         if node.id == searched_node_id:
-            return float(node.loc_x), float(node.loc_y), float(node.loc_z)
+            node_z = node.loc_z
+            if node_z is None:
+                node_z = 0
+            return float(node.loc_x), float(node.loc_y), float(node_z)
 
 
 def get_rendering_node_by_id(nodes, searched_node_id):

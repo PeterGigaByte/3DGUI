@@ -1,7 +1,9 @@
+import numpy as np
 from PyQt5.QtCore import QCoreApplication, QTimer
 
 from network_elements.elements import Node
 from step.step_enum import StepType
+from utils.calcUtils import calculate_direction
 from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
 
@@ -113,10 +115,12 @@ class AnimationApi:
     def handle_broadcast(self, step):
         broadcast_id = step.broadcast_id
         x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
+        normal = (1, 0, 0)
+        direction = calculate_direction(normal)
         if step.step_number == 0:
             self.renderer_api.create_broadcaster_signal(signal_id=broadcast_id, x=x, y=y, z=z,
                                                         num_arcs=1, radius=step.radius, arc_thickness=0.5,
-                                                        arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 0))
+                                                        arc_resolution=50, normal=normal, direction=direction)
         elif step.step_number == 11 and broadcast_id in self.renderer_api.signals:
             if broadcast_id in self.renderer_api.signals:
                 self.renderer_api.remove_wifi_signal(broadcast_id)
@@ -125,16 +129,21 @@ class AnimationApi:
             self.renderer_api.remove_wifi_signal(broadcast_id)
             self.renderer_api.create_broadcaster_signal(signal_id=broadcast_id, x=x, y=y, z=z,
                                                         num_arcs=1, radius=step.radius, arc_thickness=0.5,
-                                                        arc_resolution=50, normal=(1, 0, 0), direction=(0, 0, 0))
+                                                        arc_resolution=50, normal=normal, direction=direction)
 
     def handle_wireless_packet_reception(self, step):
         wireless_packet_id = step.wireless_packet_id
         x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
         target_x, target_y, target_z = float(step.broadcast_loc_x), float(step.broadcast_loc_y), float(
             step.broadcast_loc_z)
+        # Calculate the direction vector
+        direction_vector = (target_x - x, target_y - y, target_z - z)
+
+        # Calculate the adjusted normal vector
+        adjusted_normal = np.cross(direction_vector, (0, 0, 1))
         if step.step_number == 0:
             self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=(target_x, target_y, target_z), radius=step.radius)
+                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius)
         elif step.step_number == 8 and wireless_packet_id in self.renderer_api.signals:
             if wireless_packet_id in self.renderer_api.signals:
                 self.renderer_api.remove_wifi_signal(wireless_packet_id)
@@ -142,7 +151,7 @@ class AnimationApi:
         elif wireless_packet_id in self.renderer_api.signals:
             self.renderer_api.remove_wifi_signal(wireless_packet_id)
             self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=(target_x, target_y, target_z), radius=step.radius)
+                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius)
 
     def start_timer(self):
         self.timer_step.start(self.delay)

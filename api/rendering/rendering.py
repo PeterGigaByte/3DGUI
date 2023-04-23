@@ -99,7 +99,7 @@ class EnvironmentRenderingApi:
         """Create the test visualizing view."""
         self.renderer.SetBackground(0.5, 0.5, 1)
         self.create_ground()
-        # self.create_broadcaster_signal(0, 0, 0, 0, 0, 0, 0, 0)
+        #self.create_wifi_signal(signal_id=0, x=0,y=0,z=0,num_arcs=3,arc_thickness=0.1,arc_resolution=50,normal=[1, 0, 0],direction=[-1, 0, 0],radius=2)
         # self.remove_wifi_signal(0)
         # self.create_building(-100, -100, 0, 50, 100)
         # self.create_building(100, 100, 0, 50, 100)

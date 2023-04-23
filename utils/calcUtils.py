@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 
 def calculate_focal_points_xy(focal_point, position, angle):
     # Rotate camera to the right
@@ -49,3 +51,10 @@ def interpolate_coordinates_3D(src_coord, dst_coord, step, num_steps):
     z_step = z_src + fraction * (z_dst - z_src)
 
     return x_step, y_step, z_step
+
+
+def calculate_direction(normal):
+    if normal[0] == 0 and normal[1] == 0:
+        return np.array([1, 0, 0])
+    else:
+        return np.cross(normal, (0, 0, 1))

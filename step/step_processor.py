@@ -1,3 +1,4 @@
+import copy
 import datetime
 import time
 import uuid
@@ -52,7 +53,7 @@ class StepProcessor:
                 x.first_byte_received_time)))
 
         # Create a copy of the node_object data to update
-        updated_node_data = node_data.copy()
+        updated_node_data = copy.deepcopy(node_data)
         wireless_packet_max_time_map = {}
 
         for item in wireless_packet_data:
@@ -69,7 +70,7 @@ class StepProcessor:
 
                 # If the node_object exists, update its position
                 if node:
-                    if item.x and item.y and item.z is not None:
+                    if item.x and item.y and item.z is None:
                         node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
                 self.update_node_position(item)
             elif isinstance(item, WiredPacket):
@@ -97,7 +98,8 @@ class StepProcessor:
         for step_type_list in self.substeps.values():
             all_substeps.extend(step_type_list)
         all_substeps.sort(key=lambda x: x.time)
-        #self.display_steps()
+        # remove comment to show prints
+        # self.display_steps()
         # Return the sorted list of all substeps
         return all_substeps
 

@@ -36,7 +36,7 @@ class NodeTags:
     SYS_ID_TAG = 'sysId'
     LOC_X_TAG = 'locX'
     LOC_Y_TAG = 'locY'
-    LOC_Z_TAG = 'locY'
+    LOC_Z_TAG = 'locZ'
 
 
 class NuTags:

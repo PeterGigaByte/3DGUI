@@ -14,6 +14,7 @@ from components.frames.control_horizontal import ControlHorizontal
 from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
+from parsers.xml.dom import DOMXMLParser
 from parsers.xml.tree_element import ElementTreeXMLParser
 from step.step_processor import StepProcessor
 from views.manage.manage import ManageCustomView
@@ -67,7 +68,7 @@ class Environment(QMainWindow):
         # Initialize ParserAPI and register parsers
         self.parser_api = ParserAPI()
         self.parser_api.register_parser('xml', ElementTreeXMLParser(bottom_dock_widget=self.bottom_dock_widget))
-        # self.parser_api.register_parser('xml', DOMXMLParser())
+        #self.parser_api.register_parser('xml', DOMXMLParser())
         # self.parser_api.register_parser('json', JSONParser())
 
         # Initialize EnvironmentRenderingApi
