@@ -1,5 +1,7 @@
 import json
 
+from memory_profiler import profile
+
 from network_elements.elements import Anim, Address, Node, NodeUpdate, NonP2pLinkProperties, Ip, IpV6, WiredPacket, Ncs, \
     Link, Resource, WirelessPacketReception, Broadcaster
 from network_elements.tags import NetworkElementTags, AnimTags, NodeTags, NuTags, NonP2pLinkPropertiesTags, PTags, \
@@ -14,7 +16,8 @@ def json_parse_nodes(data):
         data_list.append(Node(node.get(prefix + NodeTags.ID_TAG),
                               node.get(prefix + NodeTags.SYS_ID_TAG),
                               node.get(prefix + NodeTags.LOC_X_TAG),
-                              node.get(prefix + NodeTags.LOC_Y_TAG)
+                              node.get(prefix + NodeTags.LOC_Y_TAG),
+                              node.get(prefix + NodeTags.LOC_Z_TAG)
                               ))
     return data_list
 
@@ -33,6 +36,7 @@ def json_parse_nu(data):
             nu.get(prefix + NuTags.HEIGHT_TAG),
             nu.get(prefix + NuTags.COORD_X_TAG),
             nu.get(prefix + NuTags.COORD_Y_TAG),
+            nu.get(prefix + NuTags.COORD_Z_TAG),
             nu.get(prefix + NuTags.DESCRIPTION_TAG)
         ))
     return data_list
@@ -71,6 +75,7 @@ def json_parse_p(data):
     for p in data.get(NetworkElementTags.P_TAG.value) or []:
         data_list.append(WiredPacket(p.get(prefix + PTags.FROM_ID_TAG),
                                      p.get(prefix + PTags.FB_TX_TAG),
+                                     p.get(prefix + PTags.LB_TX_TAG),
                                      p.get(prefix + PTags.META_INFO_TAG),
                                      p.get(prefix + PTags.TO_ID_TAG),
                                      p.get(prefix + PTags.FB_RX_TAG),
@@ -146,7 +151,7 @@ class JsonParser:
         self.anim = None
         self.none_type = None
         pass
-
+    @profile
     def parse(self, path):
         # Opening JSON file
         f = open(path)

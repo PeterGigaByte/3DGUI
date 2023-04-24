@@ -13,7 +13,9 @@ from components.frames.bottom import BottomFrame
 from components.frames.control_horizontal import ControlHorizontal
 from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
+from convertors.json_convertor import xml_convert_to_json
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
+from parsers.xml.json_reader import JsonParser
 from parsers.xml.tree_element import ElementTreeXMLParser
 from step.step_processor import StepProcessor
 from views.manage.manage import ManageCustomView
@@ -67,8 +69,8 @@ class Environment(QMainWindow):
         # Initialize ParserAPI and register parsers
         self.parser_api = ParserAPI()
         self.parser_api.register_parser('xml', ElementTreeXMLParser(bottom_dock_widget=self.bottom_dock_widget))
-        #self.parser_api.register_parser('xml', DOMXMLParser())
-        # self.parser_api.register_parser('json', JSONParser())
+        #self.parser_api.register_parser('xml', DomXmlParser(bottom_dock_widget=self.bottom_dock_widget))
+        #self.parser_api.register_parser('json', JsonParser(bottom_dock_widget=self.bottom_dock_widget))
 
         # Initialize EnvironmentRenderingApi
         self.vtk_api = EnvironmentRenderingApi()
@@ -113,6 +115,9 @@ class Environment(QMainWindow):
         # Open file menu
         open_file = QMenu("File", self)
         open_file.addAction("Open File", self.open_file)
+
+        # Convert xml to json file menu
+        open_file.addAction("Convert xml to json", self.convert_to_json)
 
         # View menu
         view_menu = QMenu("View", self)
@@ -205,7 +210,7 @@ class Environment(QMainWindow):
         """Open a file and process its contents."""
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Xml Files (*.xml);;Json "
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Xml Files (*.xml);;Json "
                                                                           "Files (*.json)",
                                                    options=options)
         if file_path:
@@ -228,6 +233,16 @@ class Environment(QMainWindow):
             # 5. remove everything on vtk window create nodes and building_object
             # 6. save logic
             self.visualizing_view()
+
+    def convert_to_json(self):
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Xml Files (*.xml)",
+                                                   options=options)
+        if file_path:
+         xml_convert_to_json(file_path)
+
 
     def reset_when_file_open(self):
         self.animation_api.substeps = []

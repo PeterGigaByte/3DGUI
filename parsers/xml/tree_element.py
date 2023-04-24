@@ -1,4 +1,6 @@
-from xml.etree import ElementTree
+from lxml import etree
+
+import memory_profiler
 
 from network_elements.elements import (
     Address, Anim, Ip, IpV6, Link, Ncs, Node, NonP2pLinkProperties,
@@ -108,33 +110,36 @@ class ElementTreeXMLParser:
         self.none_type = None
         pass
 
+    @memory_profiler.profile
     def parse(self, xml_file_path):
         self.bottom_dock_widget.log('Xml parser begin')
         self.bottom_dock_widget.log('File path: {0}'.format(xml_file_path))
-        tree = ElementTree.parse(xml_file_path)
-        tags = tree.getroot()
 
-        # anim tag
-        self.anim = parse_tag(tags)
+        context = etree.iterparse(xml_file_path, events=("start", "end"))
+        event, root = next(context)
+
+        self.anim = parse_tag(root)
         anim_content = []
 
-        # none_type counter
         self.none_type = 0
 
-        # read all tags
-        for selected_tag in tags:
-            item = parse_tag(selected_tag)
+        for event, selected_tag in context:
+            if event == "end":
+                item = parse_tag(selected_tag)
 
-            # check if some item has no type - test functionality
-            if item is None:
-                self.none_type += 1
-                print(f'Unknown tag in main content : {item}')
-            anim_content.append(parse_tag(selected_tag))
+                if item is None:
+                    self.none_type += 1
+                    print(f'Unknown tag in main content : {item}')
+                else:
+                    anim_content.append(item)
 
-        # add to anim object as content
+                # Clear the selected_tag and remove it from the tree to save memory
+                selected_tag.clear()
+                while selected_tag.getprevious() is not None:
+                    del selected_tag.getparent()[0]
+
         self.anim.content = anim_content
 
-        # info print
         self.bottom_dock_widget.log(f'NoneType tags : {self.none_type}')
         self.bottom_dock_widget.log('Xml parser end')
 
