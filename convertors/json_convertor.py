@@ -3,7 +3,7 @@ import logging
 
 import xmltodict
 
-from src.utils.helper import get_file_name
+from utils.fileUtils import get_file_name
 
 
 def xml_convert_to_json(path):

@@ -70,7 +70,7 @@ class StepProcessor:
 
                 # If the node_object exists, update its position
                 if node:
-                    if item.x and item.y and item.z is None:
+                    if item.x and item.y and item.z is not None:
                         node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
                 self.update_node_position(item)
             elif isinstance(item, WiredPacket):

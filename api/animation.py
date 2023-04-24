@@ -141,9 +141,26 @@ class AnimationApi:
 
         # Calculate the adjusted normal vector
         adjusted_normal = np.cross(direction_vector, (0, 0, 1))
+
+        # Calculate the azimuth angle (angle in the X-Y plane) of the direction vector
+        azimuth_angle = np.arctan2(direction_vector[1], direction_vector[0]) * 180 / np.pi
+
+        # Calculate the elevation angle (angle from the X-Y plane) of the direction vector
+        elevation_angle = np.arctan2(direction_vector[2], np.linalg.norm(direction_vector[:2])) * 180 / np.pi
+
+        # Calculate the start and end angles for the arcs
+        start_angle_azimuth = azimuth_angle - 45
+        end_angle_azimuth = azimuth_angle + 45
+        start_angle_elevation = elevation_angle - 45
+        end_angle_elevation = elevation_angle + 45
+
         if step.step_number == 0:
             self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius)
+                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius,
+                                                 start_angle_azimuth=start_angle_azimuth,
+                                                 end_angle_azimuth=end_angle_azimuth,
+                                                 start_angle_elevation=start_angle_elevation,
+                                                 end_angle_elevation=end_angle_elevation)
         elif step.step_number == 8 and wireless_packet_id in self.renderer_api.signals:
             if wireless_packet_id in self.renderer_api.signals:
                 self.renderer_api.remove_wifi_signal(wireless_packet_id)
@@ -151,7 +168,11 @@ class AnimationApi:
         elif wireless_packet_id in self.renderer_api.signals:
             self.renderer_api.remove_wifi_signal(wireless_packet_id)
             self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius)
+                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius,
+                                                 start_angle_azimuth=start_angle_azimuth,
+                                                 end_angle_azimuth=end_angle_azimuth,
+                                                 start_angle_elevation=start_angle_elevation,
+                                                 end_angle_elevation=end_angle_elevation)
 
     def start_timer(self):
         self.timer_step.start(self.delay)

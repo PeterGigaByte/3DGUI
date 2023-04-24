@@ -14,7 +14,6 @@ from components.frames.control_horizontal import ControlHorizontal
 from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
-from parsers.xml.dom import DOMXMLParser
 from parsers.xml.tree_element import ElementTreeXMLParser
 from step.step_processor import StepProcessor
 from views.manage.manage import ManageCustomView

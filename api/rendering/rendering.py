@@ -145,11 +145,14 @@ class EnvironmentRenderingApi:
                                                           direction=direction, radius=radius)
         self.signals[signal_id] = broadcaster_signal
 
-    def create_wifi_signal(self, signal_id, x, y, z, num_arcs=3, arc_thickness=0.5, arc_resolution=50,
-                           normal=(1, 0, 0), direction=(0, 0, 1), radius=10):
-        wifi_signal = WifiSignal(self.renderer)
-        wifi_signal.create_wifi_signal_arcs(x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, radius)
-        self.signals[signal_id] = wifi_signal
+    def create_wifi_signal(self, wireless_packet_id, x, y, z, num_arcs=3, arc_thickness=0.5, arc_resolution=50,
+                           normal=(1, 0, 0), direction=(0, 0, 1), radius=10,
+                           start_angle_azimuth=0, end_angle_azimuth=0, start_angle_elevation=0, end_angle_elevation=0):
+        self.signals[wireless_packet_id] = WifiSignal(self.renderer)
+        self.signals[wireless_packet_id].create_wifi_signal_arcs(x, y, z, num_arcs, arc_thickness, arc_resolution,
+                                                                 normal, direction, radius,
+                                                                 start_angle_azimuth, end_angle_azimuth,
+                                                                 start_angle_elevation, end_angle_elevation)
 
     def remove_wifi_signal(self, signal_id):
         self.signals[signal_id].remove_all_arcs()

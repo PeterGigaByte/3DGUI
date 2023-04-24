@@ -13,13 +13,13 @@ class Signal:
         points = np.column_stack((x, y, np.zeros_like(x)))
         return points
 
-    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, start_angle,
-                           end_angle, radius):
+    def create_signal_arcs(self, x, y, z, num_arcs, arc_thickness, arc_resolution, normal, direction, radius,
+                           start_angle_azimuth, end_angle_azimuth, start_angle_elevation, end_angle_elevation):
         arc_list = []
         for i in range(1, num_arcs + 1):
             points = vtk.vtkPoints()
 
-            arc_points = self.create_arc_points(radius, start_angle, end_angle, arc_resolution)
+            arc_points = self.create_arc_points(radius, start_angle_azimuth, end_angle_azimuth, arc_resolution)
 
             for point in arc_points:
                 points.InsertNextPoint(point)
@@ -45,25 +45,36 @@ class Signal:
             actor = vtk.vtkActor()
             actor.SetMapper(mapper)
             actor.GetProperty().SetColor(0, 0, 1)
-            actor.SetPosition(x, y, z)
 
-            # Calculate the angle between the z-axis and the normal
-            angle_normal = np.arccos(np.dot(normal, (0, 0, 1)) / np.linalg.norm(normal)) * 180 / np.pi
-            # Calculate the angle between the z-axis and the direction
-            angle_direction = np.arccos(np.dot(direction, (0, 0, 1)) / np.linalg.norm(direction)) * 180 / np.pi
+            transform = vtk.vtkTransform()
 
-            # Calculate the rotation axis for the normal and direction
+            # Translate the actor to the position (x, y, z)
+            transform.Translate(x, y, z)
+
+            # Rotate the actor to align with the normal vector
             rotation_axis_normal = np.cross((0, 0, 1), normal)
-            rotation_axis_direction = np.cross((0, 0, 1), direction)
+            angle_normal = np.arccos(np.dot(normal, (0, 0, 1)) / np.linalg.norm(normal)) * 180 / np.pi
+            transform.RotateWXYZ(angle_normal, *rotation_axis_normal)
 
-            # Rotate the actor using the calculated angles and rotation axes
-            actor.RotateWXYZ(angle_normal, *rotation_axis_normal)
-            actor.RotateWXYZ(angle_direction, *rotation_axis_direction)
+            # Rotate the actor to align with the direction vector
+            rotation_axis_direction = np.cross((0, 0, 1), direction)
+            angle_direction = np.arccos(np.dot(direction, (0, 0, 1)) / np.linalg.norm(direction)) * 180 / np.pi
+            transform.RotateWXYZ(angle_direction, *rotation_axis_direction)
+
+            # Rotate the actor to get the elevation angle
+            rotation_axis_elevation = np.cross(rotation_axis_normal, direction)
+            elevation_angle = end_angle_elevation - start_angle_elevation
+            transform.RotateWXYZ(elevation_angle, *rotation_axis_elevation)
+
+            actor.SetUserTransform(transform)
 
             self.renderer.AddActor(actor)
             arc_list.append(actor)
 
         self.renderer.GetRenderWindow().Render()
         return arc_list
+
+
+
 
 
