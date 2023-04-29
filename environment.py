@@ -17,13 +17,15 @@ from components.frames.control_horizontal import ControlHorizontal
 from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
 from convertors.json_convertor import xml_convert_to_json
-from database.database import get_steps
+from database.database import get_steps, get_all_nodes, get_all_nonp2plinkproperties
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
+from network_elements.elements import Node, NonP2pLinkProperties
 from parsers.json.json_parser import JsonParser
 from parsers.parser import ParserAPI
 from parsers.xml.dom import DomXmlParser
 from parsers.xml.tree_element import ElementTreeXmlParser
 from step.step_processor import StepProcessor
+from utils.manage import get_objects_by_type
 from views.manage.manage import ManageCustomView
 from views.settings import SettingsView
 
@@ -79,7 +81,6 @@ class Environment(QMainWindow):
         element_tree_parser = ElementTreeXmlParser(bottom_dock_widget=self.bottom_dock_widget)
         dom_parser = DomXmlParser(bottom_dock_widget=self.bottom_dock_widget)
         dom_parser.parsed_data_signal.connect(self.set_parsed_data)
-        dom_parser.update_status.connect(self.on_status_update)
 
         json_parser = JsonParser(bottom_dock_widget=self.bottom_dock_widget)
         json_parser.parsed_data_signal.connect(self.set_parsed_data)
@@ -272,7 +273,7 @@ class Environment(QMainWindow):
             self.step_processor.start()
 
             self.left_dock_widget.clear_widgets()
-            self.left_dock_widget.update_list_widget(self.animation_api.data.content)
+            self.left_dock_widget.update_list_widget(get_objects_by_type(self.animation_api.data.content, Node), get_objects_by_type(self.animation_api.data.content, NonP2pLinkProperties))
             self.animation_api.prepare_animation()
             self.visualizing_view()
         else:
@@ -281,6 +282,8 @@ class Environment(QMainWindow):
     def on_data_processed(self, result):
         if self.step_processor.optimized_parser:
             self.animation_api.set_substeps(get_steps(self.settings_view_widget.parser_batch_size_spinbox.value(), 0))
+            self.left_dock_widget.clear_widgets()
+            self.left_dock_widget.update_list_widget(get_all_nodes(), get_all_nonp2plinkproperties())
         else:
             self.animation_api.set_substeps(result)
 
@@ -307,6 +310,8 @@ class Environment(QMainWindow):
         if self.settings_view_widget.use_optimized_parser.isChecked():
             self.animation_api.clear_vtk_window()
             self.animation_api.set_substeps(get_steps(self.settings_view_widget.parser_batch_size_spinbox.value(), 0))
+            self.left_dock_widget.clear_widgets()
+            self.left_dock_widget.update_list_widget(get_all_nodes(), get_all_nonp2plinkproperties())
             self.animation_api.prepare_animation()
             self.animation_api.animate_substeps()
         elif self.animation_api.data is not None:

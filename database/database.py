@@ -981,3 +981,16 @@ def get_steps_table_size():
     conn.close()
 
     return total_length
+
+
+def get_all_nonp2plinkproperties():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    query = """
+    SELECT * FROM nonp2plinkproperties
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return [NonP2pLinkProperties(row[0], row[1], row[2]) for row in result]

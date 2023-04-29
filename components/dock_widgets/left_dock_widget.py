@@ -1,8 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDockWidget, QListWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QWidget
 
-from network_elements.elements import Node, NonP2pLinkProperties
-from utils.manage import get_objects_by_type, get_nonp2p_link_properties_by_node_id
+from utils.manage import get_nonp2p_link_properties_by_node_id
 
 
 class LeftDockWidget(QDockWidget):
@@ -70,15 +69,13 @@ class LeftDockWidget(QDockWidget):
 
             # Clear tree widget and display selected node_object properties
             self.tree_widget.clear()
-            for prop in self.nodes[node_id]["properties"]:
+            for prop in self.nodes[int(node_id)]["properties"]:
                 # Clone the QTreeWidgetItem before adding it to the tree widget
                 cloned_prop = prop.clone()
                 self.tree_widget.addTopLevelItem(cloned_prop)
 
-    def update_list_widget(self, data):
-        node_list = get_objects_by_type(data, Node)
-        nonp2p_link_properties_list = get_objects_by_type(data, NonP2pLinkProperties)
-        for node in node_list:
+    def update_list_widget(self, nodes, nonp2p_link_properties_list):
+        for node in nodes:
             channel_type_list, channel_type_dict = get_nonp2p_link_properties_by_node_id(nonp2p_link_properties_list,
                                                                                          node.id)
             self.add_node(node.id)
@@ -94,9 +91,3 @@ class LeftDockWidget(QDockWidget):
     def clear_widgets(self):
         self.list_widget.clear()
         self.tree_widget.clear()
-
-
-
-
-
-    
