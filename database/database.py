@@ -779,6 +779,61 @@ def get_steps(batch_size, offset):
     return steps
 
 
+def fetch_data_from_database(iteration_index, batch_size):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Calculate the OFFSET and LIMIT based on the batch size
+    offset = iteration_index * batch_size
+
+    query = f"SELECT * FROM steps ORDER BY time LIMIT {batch_size} OFFSET {offset}"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    steps = []
+
+    for row in rows:
+        step_type = row[1]
+        step = None
+        if step_type == 1:
+            step = WiredPacketStep(
+                time=row[2], packet_id=row[3], from_id=row[4], to_id=row[5],
+                first_byte_transmission_time=row[6], first_byte_received_time=row[7],
+                meta_info=row[8], step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12]
+            )
+
+        elif step_type == 2:
+            update_type = None
+            match row[19]:
+                case "p":
+                    update_type = NodeUpdateType.P
+                case "d":
+                    update_type = NodeUpdateType.D
+                case "s":
+                    update_type = NodeUpdateType.S
+                case "i":
+                    update_type = NodeUpdateType.I
+                case "c":
+                    update_type = NodeUpdateType.C
+            step = NodeUpdateStep(
+                time=row[2], update_type=update_type, node_id=row[20], description=row[21],
+                red=row[22], green=row[23], blue=row[24], width=row[25], height=row[26],
+                loc_x=row[10], loc_y=row[11], loc_z=row[12]
+            )
+
+        elif step_type == 3:
+            step = WirelessPacketReceptionStep(
+                time=row[2], packet_id=row[3], from_id=row[4], to_id=row[5],
+                first_byte_transmission_time=row[6], first_byte_received_time=row[7],
+                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12]
+            )
+
+        steps.append(step)
+
+    conn.close()
+    return steps
+
+
 def get_data_by_batch_size(batch_size):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -926,7 +981,3 @@ def get_steps_table_size():
     conn.close()
 
     return total_length
-
-
-
-

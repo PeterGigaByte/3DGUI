@@ -94,11 +94,11 @@ class ControlHorizontal(QFrame):
         self.bottom_dock_widget.log("Reset button pressed - Animation reset.")
         self.animation_api.reset_animation()
 
-    def update_status(self, left_info_label_text, right_info_label_text, actual_value, maximum):
+    def update_status(self, left_info_label_text, right_info_label_text, actual_value, maximum, label_text):
         """Update left and right text of the information label."""
         self.left_info_label.setText(left_info_label_text)
         self.right_info_label.setText(right_info_label_text)
-        self.update_progress_bar(actual_value, maximum)
+        self.update_progress_bar(actual_value, maximum, label_text)
 
     def on_move_ground_up_button_clicked(self):
         self.bottom_dock_widget.log("Move Ground Up button pressed - Ground moved up.")
@@ -114,7 +114,8 @@ class ControlHorizontal(QFrame):
         """Show the progress bar."""
         self.progress_bar.show()  # Show the progress bar
 
-    def update_progress_bar(self, actual_value, maximum):
+    def update_progress_bar(self, actual_value, maximum, label_text):
         """Update the value of the progress bar."""
         self.progress_bar.setValue(actual_value)  # Update the value of the progress bar
         self.progress_bar.setMaximum(maximum)  # Update the maximum value of the progress bar
+        self.progress_bar_label.setText(label_text)

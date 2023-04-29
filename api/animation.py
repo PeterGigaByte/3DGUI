@@ -1,8 +1,8 @@
 from PyQt5.QtCore import QCoreApplication, QTimer
 
-from database.database import get_all_nodes, get_steps_table_size
+from database.database import get_all_nodes, get_steps_table_size, fetch_data_from_database
 from network_elements.elements import Node
-from step.step_enum import StepType, NodeUpdateType
+from step.step_enum import StepType
 from utils.calcUtils import calculate_direction
 from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
@@ -13,7 +13,6 @@ class AnimationApi:
         self.database_iteration_current = None
         self.database_iteration_len = None
         self.database_length = None
-        self.batch_size = None
         self.transmission_max_step = 11
         self.wireless_packet_max_step = 19
         self.wired_packet_max_step = 19
@@ -51,13 +50,14 @@ class AnimationApi:
                 nodes = get_all_nodes()
                 self.database_length = get_steps_table_size()
                 if self.database_length != 0:
-                    self.database_iteration_len = self.database_length // self.batch_size
-                    self.database_remaining_len = self.database_length % self.batch_size
+                    self.database_iteration_len = self.database_length // self.animation_batch_database
+                    self.database_remaining_len = self.database_length % self.animation_batch_database
                     self.control_update_callback(
                         f"Step {self.current_step} / {self.database_length}",
                         f"Time {0}",
                         self.current_step,
                         self.database_length,
+                        "Animation progress:"
                     )
             else:
                 nodes = get_objects_by_type(self.data.content, Node)
@@ -66,6 +66,7 @@ class AnimationApi:
                     f"Time {0}",
                     self.current_step,
                     len(self.substeps),
+                    "Animation progress:"
                 )
             for node in nodes:
                 self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
@@ -82,44 +83,85 @@ class AnimationApi:
         steps_executed = 0
         render_every_n_steps = 10  # Adjust this value based on your requirements
 
-        while (self.current_step < len(self.substeps) or (self.use_database and self.current_step < self.database_length)) and not self.is_paused:
-            step = self.substeps[self.current_step]
+        while self.animation_should_continue():
+            step = self.get_current_step()
+
             self.handle_step(step)
             self.current_step += 1
 
-            if self.control_update_callback:
-                if self.use_database:
-                    self.control_update_callback(
-                        f"Step {self.current_step} / {self.database_length}",
-                        f"Time {step.time}",
-                        self.current_step,
-                        self.database_length,
-                    )
-                else:
-                    self.control_update_callback(
-                        f"Step {self.current_step} / {len(self.substeps)}",
-                        f"Time {step.time}",
-                        self.current_step,
-                        len(self.substeps),
-                    )
-            if self.steps_update_callback:
-                self.steps_update_callback(self.current_step)
-            if steps_executed % render_every_n_steps == 0:
-                self.renderer_api.renderer.GetRenderWindow().Render()
-                QCoreApplication.processEvents()  # Process events during animation
+            self.update_control_callback(step)
+            self.update_steps_callback()
+
+            if self.should_render(steps_executed, render_every_n_steps):
+                self.render_and_process_events()
 
             steps_executed += 1
 
-            if steps_executed >= self.steps_per_event:
+            if self.should_break_loop(steps_executed):
+                self.check_and_handle_animation_end()
                 break
-            if self.use_database and self.current_step >= self.batch_size * self.database_iteration_current and self.current_step != self.database_length:
-                # ziskaj aka je iteracia teraz
-                pass
-
-            elif self.current_step == len(self.substeps):
-                self.bottom_dock_widget.log("Animation finished.")
-
+            self.check_and_handle_animation_end()
         self.start_timer()
+
+    def animation_should_continue(self):
+        if self.use_database:
+            return self.current_step < self.database_length and not self.is_paused
+        else:
+            return self.current_step < len(self.substeps) and not self.is_paused
+
+    def get_current_step(self):
+        if self.use_database:
+            iteration_index, step_offset = self.calculate_requested_iteration(self.current_step)
+            self.fetch_data_from_database_if_necessary(iteration_index)
+            step = self.substeps[step_offset]
+        else:
+            step = self.substeps[self.current_step]
+
+        return step
+
+    def fetch_data_from_database_if_necessary(self, iteration_index):
+        if iteration_index != self.database_iteration_current or self.substeps is None:
+            self.substeps = fetch_data_from_database(iteration_index, self.animation_batch_database)
+            self.database_iteration_current = iteration_index
+
+    def update_control_callback(self, step):
+        if self.control_update_callback:
+            if self.use_database:
+                self.control_update_callback(
+                    f"Step {self.current_step} / {self.database_length}",
+                    f"Time {step.time}",
+                    self.current_step,
+                    self.database_length,
+                    "Animation progress:"
+                )
+            else:
+                self.control_update_callback(
+                    f"Step {self.current_step} / {len(self.substeps)}",
+                    f"Time {step.time}",
+                    self.current_step,
+                    len(self.substeps),
+                    "Animation progress:"
+                )
+
+    def update_steps_callback(self):
+        if self.steps_update_callback:
+            self.steps_update_callback(self.current_step)
+
+    def should_render(self, steps_executed, render_every_n_steps):
+        return steps_executed % render_every_n_steps == 0
+
+    def render_and_process_events(self):
+        self.renderer_api.renderer.GetRenderWindow().Render()
+        QCoreApplication.processEvents()  # Process events during animation
+
+    def should_break_loop(self, steps_executed):
+        return steps_executed >= self.steps_per_event
+
+    def check_and_handle_animation_end(self):
+        if self.current_step == self.database_length:
+            self.bottom_dock_widget.log("Animation finished (using database).")
+        elif not self.use_database and self.current_step == len(self.substeps):
+            self.bottom_dock_widget.log("Animation finished.")
 
     def handle_step(self, step):
         match step.type:
@@ -212,19 +254,31 @@ class AnimationApi:
         self.clear_vtk_window()
 
     def clear_vtk_window(self):
-        if len(self.substeps) == 0:
-            substeps_size = 9999
-            time = 0
-        elif len(self.substeps) == self.current_step:
-            substeps_size = len(self.substeps)
-            time = self.substeps[len(self.substeps) - 1].time
+        if self.use_database:
+            if self.current_step == 0:
+                substeps_size = 9999
+                time = 0
+            else:
+                iteration_index, step_offset = self.calculate_requested_iteration(self.current_step)
+                self.fetch_data_from_database_if_necessary(iteration_index)
+                substeps_size = len(self.substeps)
+                time = self.substeps[step_offset].time
         else:
-            substeps_size = len(self.substeps)
-            time = self.substeps[self.current_step].time
+            if len(self.substeps) == 0:
+                substeps_size = 9999
+                time = 0
+            elif len(self.substeps) == self.current_step:
+                substeps_size = len(self.substeps)
+                time = self.substeps[len(self.substeps) - 1].time
+            else:
+                substeps_size = len(self.substeps)
+                time = self.substeps[self.current_step].time
+
         self.prepare_animation()
+
         if self.control_update_callback:
             self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", f"Time {time}",
-                                         self.current_step, substeps_size)
+                                         self.current_step, substeps_size, "Animation progress:")
 
     def update_delay(self, new_delay):
         self.delay = new_delay
@@ -239,18 +293,30 @@ class AnimationApi:
         self.current_step = new_step
         self.clear_vtk_window()
 
-        for i in range(0, new_step):
-            if i < len(self.substeps):
-                step = self.substeps[i]
-                match step.type:
-                    case StepType.WIRED_PACKET:
-                        if i >= (new_step - 100):
-                            self.handle_packet_step(step)
-                    case StepType.NODE_UPDATE:
-                        self.handle_node_update(step)
-                    case StepType.WIRELESS_PACKET_RECEPTION:
-                        if i >= (new_step - 100):
-                            self.handle_wireless_packet_reception(step)
+        for i in range(new_step):
+            self.control_update_callback(
+                f"Step {i} / {new_step}",
+                f"Time {0}",
+                i,
+                new_step,
+                "Getting ready for animation:"
+            )
+            if self.use_database:
+                iteration_index, step_offset = self.calculate_requested_iteration(i)
+                self.fetch_data_from_database_if_necessary(iteration_index)
+                step = self.substeps[step_offset]
+            else:
+                if i < len(self.substeps):
+                    step = self.substeps[i]
+                else:
+                    break
+
+            if step.type == StepType.NODE_UPDATE:
+                self.handle_node_update(step)
+            elif step.type == StepType.WIRED_PACKET and i >= (new_step - 100):
+                self.handle_packet_step(step)
+            elif step.type == StepType.WIRELESS_PACKET_RECEPTION and i >= (new_step - 100):
+                self.handle_wireless_packet_reception(step)
 
     def set_max_steps_callback(self, callback):
         self.max_steps_callback = callback
@@ -269,16 +335,16 @@ class AnimationApi:
             self.max_steps_callback(len(self.substeps))
 
     def calculate_requested_iteration(self, step):
-        # Check if the step is within the range of available steps in the database
-        if 0 <= step < self.database_length:
-            # Calculate the requested iteration
-            iteration_index = step // self.batch_size
+        if step >= self.database_length:
+            step = self.database_length - 1
 
-            # Calculate the step offset within the current iteration
-            step_offset = step % self.batch_size
+        # Calculate the requested iteration
+        iteration_index = step // self.animation_batch_database
 
-            return iteration_index, step_offset
-        else:
-            raise ValueError("Step is out of range")
+        # Calculate the step offset within the current iteration
+        step_offset = step % self.animation_batch_database
+
+        return iteration_index, step_offset
+
 
 

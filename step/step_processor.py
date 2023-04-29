@@ -19,7 +19,7 @@ from utils.manage import get_objects_by_type
 
 class StepProcessor(QThread):
     data_processed = pyqtSignal(object)
-    update_status = pyqtSignal(int, int)
+    update_status = pyqtSignal(int, int, float, str)
 
     def __init__(self, bottom_dock_widget):
 
@@ -243,7 +243,6 @@ class StepProcessor(QThread):
             time_step = float(start_time) + (
                     step * time_difference / (num_steps - 1))
 
-
             # Get the source and destination node coordinates at the current time step
             src_x, src_y, src_z = (from_node.loc_x, from_node.loc_y, from_node.loc_z)
             dst_x, dst_y, dst_z = (to_node.loc_x, to_node.loc_y, to_node.loc_z)
@@ -395,7 +394,7 @@ class StepProcessor(QThread):
             StepType.WIRED_PACKET: [],
             StepType.WIRELESS_PACKET_RECEPTION: []
         }
-
+        t1_start = time.perf_counter()
         while offset < length:
             merged_data = get_data(offset, self.batch_size)
             data_length = len(merged_data)
@@ -404,7 +403,9 @@ class StepProcessor(QThread):
 
             for idx, data in enumerate(tqdm(merged_data, total=data_length)):
                 self.process_data(data)
-                self.update_status.emit(offset + idx + 1, length)
+                time_elapsed = float(time.perf_counter() - t1_start)
+
+                self.update_status.emit(offset + idx + 1, length, time_elapsed, "Step processing:")
 
                 # Check if any substeps were generated during the processing
                 for step_type in substeps:
@@ -441,3 +442,5 @@ def sorting_key(x):
         return float(x.first_byte_received_time)
     else:
         return 0
+
+

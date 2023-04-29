@@ -79,6 +79,8 @@ class Environment(QMainWindow):
         element_tree_parser = ElementTreeXmlParser(bottom_dock_widget=self.bottom_dock_widget)
         dom_parser = DomXmlParser(bottom_dock_widget=self.bottom_dock_widget)
         dom_parser.parsed_data_signal.connect(self.set_parsed_data)
+        dom_parser.update_status.connect(self.on_status_update)
+
         json_parser = JsonParser(bottom_dock_widget=self.bottom_dock_widget)
         json_parser.parsed_data_signal.connect(self.set_parsed_data)
 
@@ -282,9 +284,13 @@ class Environment(QMainWindow):
         else:
             self.animation_api.set_substeps(result)
 
-    def on_status_update(self, current_index, maximum):
-        self.control_horizontal.progress_bar.setValue(current_index)
-        self.control_horizontal.progress_bar.setMaximum(maximum)
+    def on_status_update(self, current_index, maximum, time, text_label):
+        self.control_horizontal.update_status(
+            f"Step {current_index} / {maximum}",
+            f"Time {str(round(time, 2))}",
+            current_index,
+            maximum,
+            text_label)
 
     def parse_file(self):
         if self.file_path:

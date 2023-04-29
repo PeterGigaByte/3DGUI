@@ -117,7 +117,7 @@ class SettingsView(QFrame):
             self.wireless_packet_spinbox.value(),
             self.num_steps_broadcast_transmission_spinbox.value(),
             self.use_optimized_parser.isChecked(),
-            self.parser_batch_size_spinbox.value()
+            self.animation_batch_size_spinbox.value()
 
         )
         self.parser_change_callback("xml", self.select_field.currentText())
