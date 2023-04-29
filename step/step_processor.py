@@ -27,6 +27,7 @@ class StepProcessor(QThread):
         self.data = None
         self.node_dict = None
         self.batch_size = 1500000
+        self.database_batch_size = 1500000
         self.bottom_dock_widget = bottom_dock_widget
         self.step_types = StepType
         self.substeps = {step_type: [] for step_type in self.step_types}
@@ -289,9 +290,10 @@ class StepProcessor(QThread):
         # Append the NodeUpdateStep object to the list of substeps
         self.substeps[StepType.NODE_UPDATE].append(node_update)
 
-    def update_constants(self, batch_size, num_steps_wired_packet_animation, num_steps_broadcast_transmission,
+    def update_constants(self, batch_size, database_batch_size, num_steps_wired_packet_animation, num_steps_broadcast_transmission,
                          num_steps_wireless_packet_reception, radius_constant, end_time_constant, optimized_parser):
         self.batch_size = batch_size
+        self.database_batch_size = database_batch_size
         self.num_steps_wired_packet_animation = num_steps_wired_packet_animation
         self.num_steps_broadcast_transmission = num_steps_broadcast_transmission
         self.num_steps_wireless_packet_reception = num_steps_wireless_packet_reception
@@ -418,7 +420,7 @@ class StepProcessor(QThread):
                     for step_type in substeps:
                         if len(substeps[step_type]) != 0:
                             insert_steps_to_database(substeps[step_type],
-                                                     1 if step_type == StepType.WIRED_PACKET else 3)
+                                                     1 if step_type == StepType.WIRED_PACKET else 3, self.database_batch_size)
                             substeps[step_type] = []
                     substeps_length = 0
 
@@ -428,7 +430,7 @@ class StepProcessor(QThread):
         # Save any remaining data to the database
         for step_type in substeps:
             if len(substeps[step_type]) != 0:
-                insert_steps_to_database(substeps[step_type], 1 if step_type == StepType.WIRED_PACKET else 3)
+                insert_steps_to_database(substeps[step_type], 1 if step_type == StepType.WIRED_PACKET else 3, self.database_batch_size)
 
         self.bottom_dock_widget.log("Processing finished.")
 

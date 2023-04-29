@@ -50,6 +50,14 @@ class SettingsView(QFrame):
         layout.addWidget(self.processor_batch_size_label)
         layout.addWidget(self.processor_batch_size_spinbox)
 
+        self.processor_database_batch_size_label = QLabel("Batch size for database processing:")
+        self.processor_database_batch_size_spinbox = QSpinBox()
+        self.processor_database_batch_size_spinbox.setMinimum(1)
+        self.processor_database_batch_size_spinbox.setMaximum(99999999)
+        self.processor_database_batch_size_spinbox.setValue(150000)
+        layout.addWidget(self.processor_database_batch_size_label)
+        layout.addWidget(self.processor_database_batch_size_spinbox)
+
         self.animation_batch_size_label = QLabel("Batch size for animation:")
         self.animation_batch_size_spinbox = QSpinBox()
         self.animation_batch_size_spinbox.setMinimum(1)
@@ -108,7 +116,7 @@ class SettingsView(QFrame):
 
     def save_settings(self):
         self.processor_settings_callback(
-            self.processor_batch_size_spinbox.value(), self.wired_packet_spinbox.value(),
+            self.processor_batch_size_spinbox.value(), self.processor_database_batch_size_spinbox.value(), self.wired_packet_spinbox.value(),
             self.num_steps_broadcast_transmission_spinbox.value(), self.wireless_packet_spinbox.value(),
             self.radius_constant_spinbox.value(), self.end_time_constant_spinbox.value(), self.use_optimized_parser.isChecked()
         )

@@ -424,7 +424,7 @@ def insert_node_updates_to_steps():
     conn.close()
 
 
-def insert_steps_to_database(data, step_type):
+def insert_steps_to_database(data, step_type, database_batch_size):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -438,21 +438,19 @@ def insert_steps_to_database(data, step_type):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     '''
     start = time.perf_counter()
-    # Define the batch size
-    batch_size = 500000
 
     # Start a transaction
     cursor.execute('BEGIN TRANSACTION')
 
     # Insert the values in batches
-    for batch_values in batched_values(data, step_type, batch_size):
+    for batch_values in batched_values(data, step_type, database_batch_size):
         cursor.executemany(query, batch_values)
         conn.commit()
 
     # Commit the transaction
     conn.commit()
     end = time.perf_counter()
-    print(f"Elapsed time (batch size: {batch_size}): {end - start}")
+    print(f"Elapsed time (batch size: {database_batch_size}): {end - start}")
     cursor.close()
     conn.close()
 
