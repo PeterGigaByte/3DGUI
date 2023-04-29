@@ -19,3 +19,10 @@ class Node:
             NodeTags.LOC_Y_TAG.value: self.loc_y,
             NodeTags.LOC_Z_TAG.value: self.loc_z
         }
+
+    def set_coordinates(self, x, y, z):
+        self.loc_x = x
+        self.loc_y = y
+        self.loc_z = z
+
+

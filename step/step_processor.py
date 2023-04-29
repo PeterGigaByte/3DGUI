@@ -1,21 +1,67 @@
 import copy
+import copy
 import datetime
+import gc
 import time
 import uuid
 
+from PyQt5.QtCore import pyqtSignal, QThread
+from tqdm import tqdm
+
+from database.database import insert_node_updates_to_steps, get_all_nodes, \
+    update_wireless_packet_reception_fb_tx, clear_steps, insert_steps_to_database, get_data, get_data_length
 from network_elements.elements import WiredPacket, Node, NodeUpdate, WirelessPacketReception, Broadcaster
-from step.step import WiredPacketStep, NodeUpdateStep, BroadcastStep, WirelessPacketReceptionStep
-from step.step_enum import StepType
+from step.step import WiredPacketStep, NodeUpdateStep, WirelessPacketReceptionStep
+from step.step_enum import StepType, NodeUpdateType
 from utils.calcUtils import interpolate_coordinates_3D
-from utils.manage import get_objects_by_type, get_node_coordinates_by_id
+from utils.manage import get_objects_by_type
 
 
-class StepProcessor:
-    def __init__(self):
+class StepProcessor(QThread):
+    data_processed = pyqtSignal(object)
+    update_status = pyqtSignal(int, int)
+
+    def __init__(self, bottom_dock_widget):
+
+        super().__init__()
+        self.data = None
+        self.node_dict = None
+        self.batch_size = 1500000
+        self.bottom_dock_widget = bottom_dock_widget
         self.step_types = StepType
         self.substeps = {step_type: [] for step_type in self.step_types}
+        # Set the number of steps to interpolate between each substep for wired packets
+        self.num_steps_wired_packet_animation = 20
+        # broadcast step parameters
+        self.num_steps_broadcast_transmission = 12
+        # wireless packet_object reception step parameters
+        self.num_steps_wireless_packet_reception = 20
+        # first radius
+        self.radius_constant = 2
+        self.end_time_constant = 0.000010
+        self.optimized_parser = False
 
-    def process_steps(self, data):
+    def run(self):
+        result = None
+        if self.data is not None:
+            self.data = self.data.content
+        if self.optimized_parser:
+            self.process_steps_with_sql_calls()
+        else:
+            result = self.process_steps_without_sql_calls(self.data)
+        self.data_processed.emit(result)
+
+    def process_steps_with_sql_calls(self):
+        # Insert the processed data into the steps table
+        # Define the query
+
+        clear_steps()
+        self.process_node_update()
+        self.update_wireless_packet_reception()
+        self.process_optimised_data()
+        # Close the database connection
+
+    def process_steps_without_sql_calls(self, data, node_data=None):
         """
         Processes the animation steps for the provided data and returns a sorted list of all substeps.
 
@@ -25,32 +71,25 @@ class StepProcessor:
         Returns:
         - A sorted list of all substeps for the provided data
         """
+        self.bottom_dock_widget.log("Processing of steps begin.")
         # Get the node_object data, node_object update data, and wired packet_object data from the content of the
         # provided data
-        node_data = get_objects_by_type(data.content, Node)
-        node_update_data = get_objects_by_type(data.content, NodeUpdate)
-        wired_packet_data = get_objects_by_type(data.content, WiredPacket)
-        broadcaster_data = get_objects_by_type(data.content, Broadcaster)
-        wireless_packet_data = get_objects_by_type(data.content, WirelessPacketReception)
+        if not self.optimized_parser and node_data is None:
+            node_data = get_objects_by_type(data, Node)
+        node_update_data = get_objects_by_type(data, NodeUpdate)
+        wired_packet_data = get_objects_by_type(data, WiredPacket)
+        broadcaster_data = get_objects_by_type(data, Broadcaster)
+        wireless_packet_data = get_objects_by_type(data, WirelessPacketReception)
 
         """If changed - do not forget to update in animation handlers!!"""
-        # Set the number of steps to interpolate between each substep for wired packets
-        num_steps_wired_packet_animation = 20
-        # broadcast step parameters
-        num_steps_broadcast_transmission = 12
-        # wireless packet_object reception step parameters
-        num_steps_wireless_packet_reception = 9
-        # first radius
-        radius_constant = 2
-        end_time_constant = 0.000010
+
         """-----------------------------------------------------------"""
         # Combine the node_object update data and wired packet_object data
         combined_data = node_update_data + wired_packet_data + broadcaster_data + wireless_packet_data
 
+        self.bottom_dock_widget.log("Processing of steps before sorting.")
         # Sort the combined data by time
-        combined_data.sort(key=lambda x: float(x.time) if hasattr(x, 'time') else (
-            float(x.first_byte_transmission_time) if hasattr(x, 'first_byte_transmission_time') else float(
-                x.first_byte_received_time)))
+        combined_data.sort(key=sorting_key)
 
         # Create a copy of the node_object data to update
         updated_node_data = copy.deepcopy(node_data)
@@ -64,43 +103,43 @@ class StepProcessor:
         # Loop through the combined data and generate substeps for each item
         for item in combined_data:
             if isinstance(item, NodeUpdate):
-                # If the item is a NodeUpdate, update the position of the corresponding node_object and add a NodeUpdateStep
-                # Find the node_object with the matching ID in updated_node_data
+                # If the item is a NodeUpdate, update the position of the corresponding node_object and add a
+                # NodeUpdateStep Find the node_object with the matching ID in updated_node_data
                 node = next((node for node in updated_node_data if node.id == item.id), None)
 
                 # If the node_object exists, update its position
                 if node:
                     if item.x and item.y and item.z is not None:
                         node.loc_x, node.loc_y, node.loc_z = item.x, item.y, item.z
+
                 self.update_node_position(item)
             elif isinstance(item, WiredPacket):
                 # If the item is a WiredPacket, generate substeps for the packet_object and add WiredPacketStep objects
-                self.generate_wired_packet_substeps(item, num_steps_wired_packet_animation, updated_node_data)
+                self.generate_wired_packet_substeps(self.num_steps_wired_packet_animation,
+                                                    item.first_byte_transmission_time,
+                                                    item.first_byte_received_time, updated_node_data[int(item.from_id)],
+                                                    updated_node_data[int(item.to_id)],
+                                                    item.meta_info, True)
+
             elif isinstance(item, Broadcaster):
-                # If the item is a Broadcaster, do nothing (for now)
-                end_time = None
-                try:
-                    end_time = wireless_packet_max_time_map[item.unique_id]
-                except KeyError:
-                    print("End time was not defined. Constant will be used")
-                self.generate_transmitter_broadcast_substeps(item, num_steps_broadcast_transmission,
-                                                             end_time,
-                                                             radius_constant, updated_node_data, end_time_constant)
                 broadcaster_transmitted[item.unique_id] = item
             elif isinstance(item, WirelessPacketReception):
                 # If the item is a WirelessPacketReception, do nothing (for now)
-                self.generate_wireless_packet_reception_substeps(item, num_steps_wireless_packet_reception,
-                                                                 broadcaster_transmitted[item.unique_id],
-                                                                 radius_constant, updated_node_data)
+                self.generate_wired_packet_substeps(self.num_steps_wireless_packet_reception,
+                                                    broadcaster_transmitted[
+                                                        item.unique_id].first_byte_transmission_time,
+                                                    item.first_byte_received_time,
+                                                    updated_node_data[
+                                                        int(broadcaster_transmitted[item.unique_id].from_id)],
+                                                    updated_node_data[int(item.to_id)])
 
         # Combine all substeps for each step type and sort them by time
         all_substeps = []
         for step_type_list in self.substeps.values():
             all_substeps.extend(step_type_list)
         all_substeps.sort(key=lambda x: x.time)
-        # remove comment to show prints
-        # self.display_steps()
-        # Return the sorted list of all substeps
+        self.bottom_dock_widget.log("Processing of steps after sorting.")
+        self.bottom_dock_widget.log("Processing of steps end.")
         return all_substeps
 
     def display_steps(self):
@@ -126,7 +165,7 @@ class StepProcessor:
         for substep in all_substeps:
             print(f"Time: {substep.time}")
 
-            if isinstance(substep, WiredPacketStep) and False:
+            if isinstance(substep, WiredPacketStep):
                 # If the substep is a WiredPacketStep, print its information
                 print(
                     f"  packetId: {substep.packet_id} fId: {substep.from_id} tId: {substep.to_id} fbTx: {substep.first_byte_transmission_time} fbRx: {substep.first_byte_received_time}")
@@ -142,116 +181,93 @@ class StepProcessor:
                 print(f"  description: {substep.description}")
             elif isinstance(substep, WirelessPacketReceptionStep):
                 # If the substep is a NodeUpdateStep, print its information
-                print(f"  wireless_packet_id: {substep.wireless_packet_id}")
-                print(f"  step number: {substep.step_number}")
+                print(f"  wireless_packet_id: {substep.packet_id}")
+                print(f"  step number: {substep.step_number} fId: {substep.from_id} tId: {substep.to_id}")
+                print(f"  x: {substep.loc_x} y: {substep.loc_y} z: {substep.loc_z}")
 
             print()
 
             # Delay for the duration of a step
             time.sleep(step_duration.total_seconds())
 
-    def generate_wired_packet_substeps(self, item, num_steps, updated_node_data):
-        """
-        Generates substeps for a wired packet_object based on the number of steps specified.
-
-        Args:
-        - item: an object representing the wired packet_object
-        - num_steps: the number of steps to interpolate
-        - updated_node_data: a dictionary containing updated node_object data
-
-        Returns:
-        - A list of WiredPacketStep objects representing the substeps of the wired packet_object
-        """
+    def generate_wired_packet_substeps_optimised(self, num_steps, first_byte_transmission_time,
+                                                 first_byte_received_time, latest_position_1, latest_position_2,
+                                                 meta_info, from_id, to_id, is_wired=False):
         # Generate a unique packet_object ID
         packet_id = uuid.uuid4()
+
+        # Calculate the total time difference between transmission and reception
+        time_difference = float(first_byte_received_time) - float(first_byte_transmission_time)
+
+        # Loop through the number of steps specified
+        for step in range(num_steps):
+
+            # Calculate the time step based on the transmission and reception times
+            time_step = float(first_byte_transmission_time) + (
+                    step * time_difference / (num_steps - 1))
+            src_x, src_y, src_z = latest_position_1
+            dst_x, dst_y, dst_z = latest_position_2
+            # Interpolate the 3D coordinates between the source and destination nodes
+            x, y, z = interpolate_coordinates_3D((float(src_x), float(src_y), float(src_z)),
+                                                 (float(dst_x), float(dst_y), float(dst_z)), step, num_steps)
+
+            if is_wired:
+                # Create a WiredPacketStep object for this substep
+                data = WiredPacketStep(time_step, packet_id, from_id, to_id,
+                                       first_byte_transmission_time, first_byte_received_time,
+                                       meta_info, step, x, y, z)
+            else:
+                # Create a WiredPacketStep object for this substep
+                data = WirelessPacketReceptionStep(time_step, packet_id, from_id, to_id,
+                                                   first_byte_transmission_time, first_byte_received_time,
+                                                   step, x, y, z)
+
+            # Append the WiredPacketStep object to the list of substeps
+            if data.from_id != data.to_id and is_wired:
+                self.substeps[StepType.WIRED_PACKET].append(data)
+            elif data.from_id != data.to_id:
+                self.substeps[StepType.WIRELESS_PACKET_RECEPTION].append(data)
+
+    def generate_wired_packet_substeps(self, num_steps, start_time,
+                                       end_time, from_node, to_node, meta_info="",
+                                       is_wired=False):
+        # Generate a unique packet_object ID
+        packet_id = uuid.uuid4()
+
+        # Calculate the total time difference between transmission and reception
+        time_difference = float(end_time) - float(start_time)
 
         # Loop through the number of steps specified
         for step in range(num_steps):
             # Calculate the time step based on the transmission and reception times
-            time_step = float(item.first_byte_transmission_time) + (
-                    step * (float(item.first_byte_received_time) - float(item.first_byte_transmission_time)) / (
-                    num_steps - 1))
+            time_step = float(start_time) + (
+                    step * time_difference / (num_steps - 1))
+
+
+            # Get the source and destination node coordinates at the current time step
+            src_x, src_y, src_z = (from_node.loc_x, from_node.loc_y, from_node.loc_z)
+            dst_x, dst_y, dst_z = (to_node.loc_x, to_node.loc_y, to_node.loc_z)
 
             # Interpolate the 3D coordinates between the source and destination nodes
-            x, y, z = interpolate_coordinates_3D(get_node_coordinates_by_id(updated_node_data, item.from_id),
-                                                 get_node_coordinates_by_id(updated_node_data, item.to_id), step,
-                                                 num_steps)
+            x, y, z = interpolate_coordinates_3D((float(src_x), float(src_y), float(src_z)),
+                                                 (float(dst_x), float(dst_y), float(dst_z)), step, num_steps)
 
-            # Create a WiredPacketStep object for this substep
-            packet_substep = WiredPacketStep(time_step, packet_id, item.from_id, item.to_id,
-                                             item.first_byte_transmission_time, item.first_byte_received_time,
-                                             item.meta_info, step, x, y, z)
+            if is_wired:
+                # Create a WiredPacketStep object for this substep
+                data = WiredPacketStep(time_step, packet_id, from_node.id, to_node.id,
+                                       float(start_time), float(end_time),
+                                       meta_info, step, x, y, z)
+            else:
+                # Create a WiredPacketStep object for this substep
+                data = WirelessPacketReceptionStep(time_step, packet_id, from_node.id, to_node.id,
+                                                   float(start_time), float(end_time),
+                                                   step, x, y, z)
 
             # Append the WiredPacketStep object to the list of substeps
-            if packet_substep.from_id != packet_substep.to_id:
-                self.substeps[StepType.WIRED_PACKET].append(packet_substep)
-
-    def generate_transmitter_broadcast_substeps(self, broadcaster, num_steps, end_time, radius_constant,
-                                                updated_node_data, end_time_constant):
-        broadcast_substeps = []
-        if end_time is None:
-            end_time = float(broadcaster.first_byte_transmission_time) + end_time_constant
-        # Get the node_object associated with the broadcaster using the from_id (f_id)
-        node = next((node for node in updated_node_data if node.id == broadcaster.from_id), None)
-
-        if not node:
-            # If the node is not found, return an empty list
-            return
-
-        # Calculate the time step for each substep
-        time_step = (float(end_time) - float(broadcaster.first_byte_transmission_time)) / (num_steps - 1)
-        broadcaster_id = uuid.uuid4()
-        # Generate the substeps
-        for step in range(num_steps):
-            # Calculate the time for the current substep
-            substep_time = float(broadcaster.first_byte_transmission_time) + step * time_step
-            radius = radius_constant * (step+1)
-            # Create a BroadcastStep object for the current substep
-            broadcast_substep = BroadcastStep(broadcast_id=broadcaster_id,
-                                              time=substep_time, loc_x=node.loc_x,
-                                              loc_y=node.loc_y, loc_z=node.loc_z,
-                                              radius=radius, step_number=step)
-
-            # Append the BroadcastStep object to the list of substeps
-            broadcast_substeps.append(broadcast_substep)
-
-        self.substeps[StepType.BROADCAST].extend(broadcast_substeps)
-
-    def generate_wireless_packet_reception_substeps(self, wireless_packet_reception, num_steps, broadcaster,
-                                                    radius_constant, updated_node_data):
-        reception_substeps = []
-
-        # Get the node_object associated with the wireless packet reception using the to_id (t_id)
-        node = next((node for node in updated_node_data if node.id == wireless_packet_reception.to_id), None)
-        broadcaster_node = next((node for node in updated_node_data if node.id == broadcaster.from_id), None)
-
-        if not node:
-            # If the node is not found, return an empty list
-            return
-
-        # Calculate the time step for each substep
-        time_step = (float(wireless_packet_reception.first_byte_received_time) - float(
-            broadcaster.first_byte_transmission_time)) / (num_steps - 1)
-        wireless_packet_id = uuid.uuid4()
-        # Generate the substeps
-        for step in range(num_steps):
-            # Calculate the time for the current substep
-            substep_time = float(wireless_packet_reception.first_byte_received_time) + step * time_step
-            radius = radius_constant * (step+1)
-
-            # Create a WirelessReceptionStep object for the current substep
-            reception_substep = WirelessPacketReceptionStep(wireless_packet_id=wireless_packet_id,
-                                                            time=substep_time, loc_x=node.loc_x,
-                                                            loc_y=node.loc_y, loc_z=node.loc_z,
-                                                            radius=radius, step_number=step,
-                                                            broadcast_loc_x=broadcaster_node.loc_x,
-                                                            broadcast_loc_y=broadcaster_node.loc_y,
-                                                            broadcast_loc_z=broadcaster_node.loc_z)
-
-            # Append the WirelessReceptionStep object to the list of substeps
-            reception_substeps.append(reception_substep)
-
-        self.substeps[StepType.WIRELESS_PACKET_RECEPTION].extend(reception_substeps)
+            if data.from_id != data.to_id and is_wired:
+                self.substeps[StepType.WIRED_PACKET].append(data)
+            elif data.from_id != data.to_id:
+                self.substeps[StepType.WIRELESS_PACKET_RECEPTION].append(data)
 
     def update_node_position(self, item):
         """
@@ -266,9 +282,162 @@ class StepProcessor:
         """
 
         # Create a NodeUpdateStep object for this update
-        node_update = NodeUpdateStep(time=float(item.time), node_id=item.id, red=item.r, green=item.g, blue=item.b,
+        node_update = NodeUpdateStep(time=float(item.time), update_type=NodeUpdateType[item.p.upper()], node_id=item.id,
+                                     red=item.r, green=item.g, blue=item.b,
                                      width=item.w, height=item.h,
                                      loc_x=item.x, loc_y=item.y, loc_z=item.z, description=item.descr)
 
         # Append the NodeUpdateStep object to the list of substeps
         self.substeps[StepType.NODE_UPDATE].append(node_update)
+
+    def update_constants(self, batch_size, num_steps_wired_packet_animation, num_steps_broadcast_transmission,
+                         num_steps_wireless_packet_reception, radius_constant, end_time_constant, optimized_parser):
+        self.batch_size = batch_size
+        self.num_steps_wired_packet_animation = num_steps_wired_packet_animation
+        self.num_steps_broadcast_transmission = num_steps_broadcast_transmission
+        self.num_steps_wireless_packet_reception = num_steps_wireless_packet_reception
+        self.radius_constant = radius_constant
+        self.end_time_constant = end_time_constant
+        self.optimized_parser = optimized_parser
+
+    def get_updated_node_coordinates_by_id(self, updated_node_data, node_id, time_t):
+        # Find the node with the matching ID in updated_node_data
+        node = next((node for node in updated_node_data if node.id == node_id), None)
+
+        if node:
+            # Find the latest NodeUpdateStep for the node up to the specified time
+            node_updates = [step for step in self.substeps[StepType.NODE_UPDATE] if
+                            step.node_id == node_id and step.time <= time_t]
+            if node_updates:
+                # Find the latest update with x, y, and z not None
+                latest_update = None
+                for update in node_updates:  # Remove the 'sorted' function and iterate in the original order
+                    if update.loc_x is not None and update.loc_y is not None and update.loc_z is not None:
+                        latest_update = update
+                        # No need for 'break', continue iterating to find the latest update in the original order
+
+                if latest_update:
+                    return latest_update.loc_x, latest_update.loc_y, latest_update.loc_z
+                else:
+                    # If no updates with x, y, and z not None are found, return the initial node coordinates
+                    return node.loc_x, node.loc_y, node.loc_z
+        return None, None, None
+
+    def process_node_update(self):
+        self.bottom_dock_widget.log("Process of nodes update started.")
+        insert_node_updates_to_steps()
+        self.bottom_dock_widget.log("Process of node update ended.")
+
+    def update_wireless_packet_reception(self):
+        self.bottom_dock_widget.log("Process of updating wireless packet reception started.")
+        update_wireless_packet_reception_fb_tx()
+        self.bottom_dock_widget.log("Process of updating wireless packet reception ended.")
+
+    def process_item(self, item, step_type_param):
+        self.bottom_dock_widget.log("Processing of item start")
+        latest_position_1, latest_position_2 = (1, 1, 1), (2, 2, 2)
+        if step_type_param == StepType.WIRED_PACKET:
+            is_wired = True
+        else:
+            is_wired = False
+        self.substeps = {step_type: [] for step_type in self.step_types}
+        self.generate_wired_packet_substeps_optimised(self.num_steps_wired_packet_animation,
+                                                      item.first_byte_transmission_time,
+                                                      item.first_byte_received_time, latest_position_1,
+                                                      latest_position_2,
+                                                      item.meta_info, item.from_id, item.to_id,
+                                                      is_wired)
+        if step_type_param == StepType.WIRED_PACKET:
+            substeps = self.substeps[StepType.WIRED_PACKET]
+        else:
+            substeps = self.substeps[StepType.WIRELESS_PACKET_RECEPTION]
+        self.substeps = {step_type: [] for step_type in self.step_types}
+        self.bottom_dock_widget.log(f"Processing of item end {self.substeps[StepType.WIRED_PACKET]}")
+        return substeps
+
+    def process_data(self, data):
+        match data:
+            case NodeUpdate():
+                if data.p == 'p':
+                    self.node_dict.get(data.id).set_coordinates(data.x, data.y, data.z)
+            case WiredPacket():
+                self.generate_wired_packet_substeps(self.num_steps_wired_packet_animation,
+                                                    data.first_byte_transmission_time, data.first_byte_received_time,
+                                                    self.node_dict.get(data.from_id), self.node_dict.get(data.to_id),
+                                                    data.meta_info, True)
+            case WirelessPacketReception():
+                self.generate_wired_packet_substeps(self.num_steps_wireless_packet_reception,
+                                                    data.first_byte_transmission_time,
+                                                    data.first_byte_received_time, self.node_dict.get(data.from_id),
+                                                    self.node_dict.get(data.to_id))
+
+    def merge_and_sort_data(self, node_updates, wireless_packets, wired_packets):
+        # Merge all data into a single list
+        merged_data = node_updates + wireless_packets + wired_packets
+
+        sorted_data = sorted(merged_data, key=sorting_key)
+
+        # Clear original memory usage
+        del node_updates[:]
+        del wireless_packets[:]
+        del wired_packets[:]
+        gc.collect()
+
+        return sorted_data
+
+    def process_optimised_data(self):
+        self.node_dict = {node.id: node for node in get_all_nodes()}
+        length = get_data_length()
+        offset = 0
+
+        # Initialize substeps dictionary
+        substeps = {
+            StepType.WIRED_PACKET: [],
+            StepType.WIRELESS_PACKET_RECEPTION: []
+        }
+
+        while offset < length:
+            merged_data = get_data(offset, self.batch_size)
+            data_length = len(merged_data)
+
+            substeps_length = 0
+
+            for idx, data in enumerate(tqdm(merged_data, total=data_length)):
+                self.process_data(data)
+                self.update_status.emit(offset + idx + 1, length)
+
+                # Check if any substeps were generated during the processing
+                for step_type in substeps:
+                    substeps[step_type].extend(self.substeps[step_type])
+                    substeps_length += len(self.substeps[step_type])
+                    self.substeps[step_type] = []
+
+                # Save data to the database and clear the list when the desired length is reached
+                if substeps_length >= self.batch_size:
+                    for step_type in substeps:
+                        if len(substeps[step_type]) != 0:
+                            insert_steps_to_database(substeps[step_type],
+                                                     1 if step_type == StepType.WIRED_PACKET else 3)
+                            substeps[step_type] = []
+                    substeps_length = 0
+
+            # Update the offset
+            offset += data_length
+
+        # Save any remaining data to the database
+        for step_type in substeps:
+            if len(substeps[step_type]) != 0:
+                insert_steps_to_database(substeps[step_type], 1 if step_type == StepType.WIRED_PACKET else 3)
+
+        self.bottom_dock_widget.log("Processing finished.")
+
+
+def sorting_key(x):
+    if hasattr(x, 'time') and x.time is not None:
+        return float(x.time)
+    elif hasattr(x, 'first_byte_transmission_time') and x.first_byte_transmission_time is not None:
+        return float(x.first_byte_transmission_time)
+    elif x.first_byte_received_time is not None:
+        return float(x.first_byte_received_time)
+    else:
+        return 0

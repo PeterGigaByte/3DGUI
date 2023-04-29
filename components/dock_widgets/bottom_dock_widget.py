@@ -23,3 +23,4 @@ class BottomDockWidget(QDockWidget):
     def log(self, text):
         """Append a log message to the textbox."""
         self.textbox.append(get_current_time() + " - " + text)
+        print(get_current_time() + " - " + text)

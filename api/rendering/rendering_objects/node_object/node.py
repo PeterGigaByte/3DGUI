@@ -2,13 +2,14 @@ import uuid
 
 import vtk
 
+from step.step_enum import NodeUpdateType
 from utils.renderingUtils import normalize_rgb
 
 
 class Node:
     def __init__(self, x, y, z, radius=1, description="Node", node_color=(255, 0, 0), label_color=(255, 255, 255),
                  node_id=None):
-        self.node_id = node_id if node_id else uuid.uuid4()
+        self.node_id = node_id
         self.x = x
         self.y = y
         self.z = z
@@ -69,21 +70,16 @@ class Node:
         self.x = x
         self.y = y
         self.z = z
-        self.sphere_actor.SetPosition(self.x, self.y, self.z)
+        self.update_sphere()
         self.update_text_actor(self.text_actor)
 
     def update_attributes(self, node, renderer):
-        if node.loc_x is not None and node.loc_y is not None and node.loc_z is not None:
-            self.x = float(node.loc_x)
-            self.y = float(node.loc_y)
-            self.z = float(node.loc_z)
-            self.update_sphere()
-            self.update_text_actor(self.text_actor)
-
-        if node.description is not None:
+        if node.update_type == NodeUpdateType.P:
+            self.update_position( float(node.loc_x), float(node.loc_y), float(node.loc_z))
+        if node.update_type == NodeUpdateType.D:
             self.description = node.description
             self.update_text_actor(self.text_actor)
-        if node.red is not None and node.green is not None and node.blue is not None:
+        if node.update_type == NodeUpdateType.C:
             self.node_color = (float(node.red), float(node.green), float(node.blue))
             self.sphere_actor.GetProperty().SetColor(*normalize_rgb(self.node_color))
         if renderer:

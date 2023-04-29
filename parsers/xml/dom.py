@@ -1,5 +1,7 @@
-from memory_profiler import profile
 from xml.dom.minidom import parse
+
+from PyQt5.QtCore import QThread, pyqtSignal
+
 from network_elements.elements import (
     Address, Anim, Ip, IpV6, Link, Ncs, Node, NonP2pLinkProperties,
     NodeUpdate, WiredPacket, Broadcaster, Resource, WirelessPacketReception
@@ -8,21 +10,29 @@ from network_elements.tags import NetworkElementTags, AnimTags, NodeTags, NuTags
     IpTags, IpV6Tags, NcsTags, PTags, WprTags, PrTags, ResTags, LinkTags
 
 
-class DomXmlParser:
+class DomXmlParser(QThread):
+    parsed_data_signal = pyqtSignal(object)
+
     @staticmethod
     def get_attribute_with_none(node, attribute_name):
         attr_value = node.getAttribute(attribute_name)
         return None if attr_value == "" else attr_value
 
     def __init__(self, bottom_dock_widget):
+        super().__init__()
+        self.xml_file_path = None
         self.bottom_dock_widget = bottom_dock_widget
         self.anim = None
         self.none_type = None
-        pass
 
-    @profile
-    def parse(self, xml_file_path):
-        root = parse(xml_file_path)
+    def parse(self, xml_file_path, batch_size):
+        self.xml_file_path = xml_file_path
+        self.start()
+
+    def run(self):
+        self.bottom_dock_widget.log('Xml DOM parser begin.')
+        self.bottom_dock_widget.log('File path: {0}'.format(self.xml_file_path))
+        root = parse(self.xml_file_path)
 
         # anim tag
         anim = dom_parse_anim(root)
@@ -39,7 +49,9 @@ class DomXmlParser:
         anim_content.extend(dom_parse_link(root))
         anim_content.extend(dom_parse_nsc(root))
         anim.content = anim_content
-        return anim
+        self.bottom_dock_widget.log(f'NoneType tags : {self.none_type}')
+        self.bottom_dock_widget.log('Xml DOM parser end.')
+        self.parsed_data_signal.emit(anim)
 
 
 def dom_parse_anim(data):
@@ -90,7 +102,7 @@ def dom_parse_non_link_properties(data):
             DomXmlParser.get_attribute_with_none(non_link_property, NonP2pLinkPropertiesTags.ID_TAG),
             DomXmlParser.get_attribute_with_none(non_link_property, NonP2pLinkPropertiesTags.IP_ADDRESS_TAG),
             DomXmlParser.get_attribute_with_none(non_link_property, NonP2pLinkPropertiesTags.CHANNEL_TYPE_TAG)
-            ))
+        ))
     return data_list
 
 

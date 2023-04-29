@@ -2,15 +2,6 @@ def get_objects_by_type(objects, object_type):
     return [item for item in objects if isinstance(item, object_type)]
 
 
-def get_node_coordinates_by_id(nodes, searched_node_id):
-    for node in nodes:
-        if node.id == searched_node_id:
-            node_z = node.loc_z
-            if node_z is None:
-                node_z = 0
-            return float(node.loc_x), float(node.loc_y), float(node_z)
-
-
 def get_rendering_node_by_id(nodes, searched_node_id):
     for node in nodes:
         if node.node_id == searched_node_id:
@@ -44,5 +35,3 @@ def get_nonp2p_link_properties_by_node_id(nonp2p_link_properties_list, node_id):
                 channel_type_list.append(channel_type)
 
     return channel_type_list, channel_type_dict
-
-

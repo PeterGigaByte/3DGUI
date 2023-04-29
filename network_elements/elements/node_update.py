@@ -15,7 +15,7 @@ class NodeUpdate:
         self.h = h
         self.x = x
         self.y = y
-        self.z = z
+        self.z = z if z is not None else 0
         self.descr = descr
 
     def to_dict(self):

@@ -1,7 +1,9 @@
+from concurrent.futures import ProcessPoolExecutor
+
+from PyQt5.QtCore import QObject, QThread
 from lxml import etree
 
-import memory_profiler
-
+from database.database import process_batch, remove_database
 from network_elements.elements import (
     Address, Anim, Ip, IpV6, Link, Ncs, Node, NonP2pLinkProperties,
     NodeUpdate, WiredPacket, Broadcaster, Resource, WirelessPacketReception
@@ -48,8 +50,8 @@ def parse_tag(selected_tag):
         case NetworkElementTags.IP_TAG.value:
             addresses = selected_tag.findall(NetworkElementTags.ADDRESS_TAG.value)
             addresses_list = []
-            for _ in addresses:
-                addresses_list.append(Address(selected_tag.attrib.get(AddressTags.IP_ADDRESS_TAG)))
+            for address in addresses:
+                addresses_list.append(Address(address.text))
             return Ip(selected_tag.attrib.get(IpTags.N_TAG), addresses_list)
 
         case NetworkElementTags.IPV6_TAG.value:
@@ -60,7 +62,7 @@ def parse_tag(selected_tag):
             return IpV6(selected_tag.attrib.get(IpV6Tags.N_TAG), addresses_list)
 
         case NetworkElementTags.ADDRESS_TAG.value:
-            return Address(selected_tag.attrib.get(AddressTags.IP_ADDRESS_TAG))
+            return Address(selected_tag.text)
 
         case NetworkElementTags.NCS_TAG.value:
             return Ncs(selected_tag.attrib.get(NcsTags.NC_ID_TAG),
@@ -103,45 +105,60 @@ def parse_tag(selected_tag):
                         )
 
 
-class ElementTreeXMLParser:
+class ElementTreeXmlParser(QThread):
     def __init__(self, bottom_dock_widget):
+        super().__init__()
+        self.batch_size = None
+        self.xml_file_path = None
         self.bottom_dock_widget = bottom_dock_widget
         self.anim = None
         self.none_type = None
-        pass
 
-    @memory_profiler.profile
-    def parse(self, xml_file_path):
-        self.bottom_dock_widget.log('Xml parser begin')
-        self.bottom_dock_widget.log('File path: {0}'.format(xml_file_path))
+    def parse(self, xml_file_path, batch_size):
+        self.xml_file_path = xml_file_path
+        self.batch_size = batch_size
+        self.start()
 
-        context = etree.iterparse(xml_file_path, events=("start", "end"))
+    def run(self):
+        remove_database()
+        self.bottom_dock_widget.log('Xml treeElement parser begin.')
+        self.bottom_dock_widget.log('File path: {0}'.format(self.xml_file_path))
+
+        context = etree.iterparse(self.xml_file_path, events=("start", "end"))
         event, root = next(context)
 
         self.anim = parse_tag(root)
         anim_content = []
 
         self.none_type = 0
+        batch = []
 
-        for event, selected_tag in context:
-            if event == "end":
-                item = parse_tag(selected_tag)
+        with ProcessPoolExecutor() as executor:
+            for event, selected_tag in context:
+                if event == "end":
+                    item = parse_tag(selected_tag)
 
-                if item is None:
-                    self.none_type += 1
-                    print(f'Unknown tag in main content : {item}')
-                else:
-                    anim_content.append(item)
+                    if item is None:
+                        self.none_type += 1
+                        print(f'Unknown tag in main content : {item}')
+                    else:
+                        batch.append(item)
 
-                # Clear the selected_tag and remove it from the tree to save memory
-                selected_tag.clear()
-                while selected_tag.getprevious() is not None:
-                    del selected_tag.getparent()[0]
+                    if len(batch) >= self.batch_size:
+                        executor.submit(process_batch,
+                                        batch.copy())  # Submit the batch processing task to the process pool
+                        batch = []
+
+                    # Clear the selected_tag and remove it from the tree to save memory
+                    selected_tag.clear()
+                    while selected_tag.getprevious() is not None:
+                        del selected_tag.getparent()[0]
+
+            # Save the remaining batch
+            if batch:
+                process_batch(batch)
 
         self.anim.content = anim_content
 
         self.bottom_dock_widget.log(f'NoneType tags : {self.none_type}')
-        self.bottom_dock_widget.log('Xml parser end')
-
-        return self.anim
-
+        self.bottom_dock_widget.log('Xml TreeElement parser end.')

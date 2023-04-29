@@ -5,8 +5,6 @@ from components.frames.custom.custom_slider import CustomSlider
 from components.frames.custom.custom_spin_box import CustomSpinBox
 
 
-
-
 class ControlVertical(QFrame):
     def __init__(self, animation_api, parent=None):
         super(ControlVertical, self).__init__(parent)
@@ -119,5 +117,3 @@ class ControlVertical(QFrame):
     def on_steps_per_event_label_changed(self):
         self.animation_api.steps_per_event = self.steps_per_event_value_label.value()
         self.steps_per_event_slider.setValue(self.steps_per_event_value_label.value())
-
-

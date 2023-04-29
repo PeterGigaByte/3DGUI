@@ -223,9 +223,9 @@
     <nu p='i' t='0' id='2' rid='3'/>
     <nu p='s' t='0' id='2' w='2' h='2'/>
     <nu p='d' t='0' id='0' descr='src'/>
-    <nu p='p' t='0' id='0' x='2.849273754' y='8.750522677' z='8'/>
-    <nu p='p' t='0' id='1' x='13.2271456' y='27.87149295' z='15'/>
-    <nu p='p' t='0' id='2' x='5.251432884' y='17.79490982' z='11'/>
+    <nu p='p' t='0' id='0' x='2.849273754' y='8.750522677'/>
+    <nu p='p' t='0' id='1' x='13.2271456' y='27.87149295'/>
+    <nu p='p' t='0' id='2' x='5.251432884' y='17.79490982' />
     <pr uId='1' fId='3' fbTx='0.028556'
         meta-info='ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=0) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()'/>
     <wpr uId='1' tId='0' fbRx='0.028560031' lbRx='0'/>
@@ -721,19 +721,19 @@
     <wpr uId="78" tId="0" fbRx="4.226960049" lbRx="0"/>
     <wpr uId="78" tId="2" fbRx="4.226960066" lbRx="0"/>
     <wpr uId="78" tId="1" fbRx="4.226960097" lbRx="0"/>
-    <nu p="p" t="4.282405904" id="2" x="7.064411865" y="18.52715602" z='8'/>
+    <nu p="p" t="4.282405904" id="2" x="7.064411865" y="18.52715602" />
     <pr uId="79" fId="3" fbTx="4.329356"
         meta-info="ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=47) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()"/>
     <wpr uId="79" tId="0" fbRx="4.329360048" lbRx="0"/>
     <wpr uId="79" tId="2" fbRx="4.329360067" lbRx="0"/>
     <wpr uId="79" tId="1" fbRx="4.329360096" lbRx="0"/>
-    <nu p="p" t="4.42300237" id="0" x="2.44069359" y="13.86379379" z='8'/>
+    <nu p="p" t="4.42300237" id="0" x="2.44069359" y="13.86379379" />
     <pr uId="80" fId="3" fbTx="4.431756"
         meta-info="ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=48) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()"/>
     <wpr uId="80" tId="0" fbRx="4.431760047" lbRx="0"/>
     <wpr uId="80" tId="2" fbRx="4.431760067" lbRx="0"/>
     <wpr uId="80" tId="1" fbRx="4.431760096" lbRx="0"/>
-    <nu p="p" t="4.5" id="0" x="2.580999531" y="14.09388613" z='8'/>
+    <nu p="p" t="4.5" id="0" x="2.580999531" y="14.09388613" />
     <pr uId="81" fId="2" fbTx="4.500034"
         meta-info="ns3::WifiMacHeader (DATA ToDS=1, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=60us, DA=00:00:00:00:00:0a, SA=00:00:00:00:00:09, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=7) ns3::LlcSnapHeader (type 0x800) ns3::Ipv4Header (tos 0x0 DSCP Default ECN Not-ECT ttl 64 id 5 protocol 17 offset (bytes) 0 flags [none] length: 42 10.1.0.3 &gt; 10.2.1.4) ns3::UdpHeader (length: 22 49153 &gt; 80) Payload (size=14) ns3::WifiMacTrailer ()"/>
     <wpr uId="81" tId="0" fbRx="4.500038023" lbRx="0"/>
@@ -759,13 +759,13 @@
     <p fId="4" fbTx="4.505232468" lbTx="4.50523298"
        meta-info="ns3::EthernetHeader ( length/type=0x800, source=00:00:00:00:00:03, destination=00:00:00:00:00:06) ns3::Ipv4Header (tos 0x0 DSCP Default ECN Not-ECT ttl 62 id 5 protocol 17 offset (bytes) 0 flags [none] length: 42 10.1.0.3 &gt; 10.2.1.4) ns3::UdpHeader (length: 22 49153 &gt; 80) Payload (size=14) Payload (size=4) ns3::EthernetTrailer (fcs=0)"
        tId="7" fbRx="4.50523798" lbRx="0"/>
-    <nu p="p" t="4.533104686" id="1" x="7.249003272" y="27.86066507" z='8'/>
+    <nu p="p" t="4.533104686" id="1" x="7.249003272" y="27.86066507" />
     <pr uId="84" fId="3" fbTx="4.534156"
         meta-info="ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=49) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()"/>
     <wpr uId="84" tId="0" fbRx="4.534160048" lbRx="0"/>
     <wpr uId="84" tId="2" fbRx="4.534160068" lbRx="0"/>
     <wpr uId="84" tId="1" fbRx="4.534160096" lbRx="0"/>
-    <nu p="p" t="4.602431685" id="2" x="7.973878146" y="18.9429337" z='8'/>
+    <nu p="p" t="4.602431685" id="2" x="7.973878146" y="18.9429337" />
     <pr uId="85" fId="3" fbTx="4.636556"
         meta-info="ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=50) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()"/>
     <wpr uId="85" tId="0" fbRx="4.636560049" lbRx="0"/>
@@ -813,9 +813,9 @@
     <wpr uId="91" tId="0" fbRx="4.943760051" lbRx="0"/>
     <wpr uId="91" tId="2" fbRx="4.943760068" lbRx="0"/>
     <wpr uId="91" tId="1" fbRx="4.943760095" lbRx="0"/>
-    <nu p="p" t="5" id="2" x="6.995743003" y="18.91296574" z='8'/>
-    <nu p="p" t="5.008696458" id="2" x="6.974347155" y="18.91231021" z='8'/>
-    <nu p="p" t="5.016492106" id="0" x="2.174447332" y="15.33470031" z='8'/>
+    <nu p="p" t="5" id="2" x="6.995743003" y="18.91296574" />
+    <nu p="p" t="5.008696458" id="2" x="6.974347155" y="18.91231021" />
+    <nu p="p" t="5.016492106" id="0" x="2.174447332" y="15.33470031" />
     <pr uId="92" fId="3" fbTx="5.046156"
         meta-info="ns3::WifiMacHeader (MGT_BEACON ToDS=0, FromDS=0, MoreFrag=0, Retry=0, MoreData=0 Duration/ID=0us, DA=ff:ff:ff:ff:ff:ff, SA=00:00:00:00:00:0a, BSSID=00:00:00:00:00:0a, FragNumber=0, SeqNumber=54) ns3::MgtProbeResponseHeader (ssid=eduroam, rates=[*6mbs 9mbs *12mbs 18mbs *24mbs 36mbs 48mbs 54mbs], ERP information=0|0|0, Extended Capabilities=0 , HT Capabilities=0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , HT Operation=0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  , VHT Capabilities=0|281470681808895 , VHT Operation=0|0|0|0 , HE Capabilities=0|0|0|0|0 , HE Operation=0|0) ns3::WifiMacTrailer ()"/>
     <wpr uId="92" tId="0" fbRx="5.046160052" lbRx="0"/>

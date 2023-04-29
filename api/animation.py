@@ -1,14 +1,22 @@
-import numpy as np
 from PyQt5.QtCore import QCoreApplication, QTimer
 
+from database.database import get_all_nodes, get_steps_table_size
 from network_elements.elements import Node
-from step.step_enum import StepType
+from step.step_enum import StepType, NodeUpdateType
 from utils.calcUtils import calculate_direction
 from utils.manage import get_objects_by_type, get_rendering_node_by_id
 
 
 class AnimationApi:
     def __init__(self, renderer_api, bottom_dock_widget):
+        self.database_remaining_len = None
+        self.database_iteration_current = None
+        self.database_iteration_len = None
+        self.database_length = None
+        self.batch_size = None
+        self.transmission_max_step = 11
+        self.wireless_packet_max_step = 19
+        self.wired_packet_max_step = 19
         self.renderer_api = renderer_api
         self.bottom_dock_widget = bottom_dock_widget
         self.data = None
@@ -25,6 +33,8 @@ class AnimationApi:
         self.progress_bar_maximum_callback = None
         self.animation_started = False
         self.timer_step = QTimer()
+        self.use_database = False
+        self.animation_batch_database = 150000
 
     def set_data(self, data):
         self.data = data
@@ -33,17 +43,33 @@ class AnimationApi:
         self.control_update_callback = callback
 
     def prepare_animation(self):
-        if self.data and self.data.content:
-            nodes = get_objects_by_type(self.data.content, Node)
-            self.control_update_callback(
-                f"Step {self.current_step} / {len(self.substeps)}",
-                f"Time {0}",
-                self.current_step,
-                len(self.substeps),
-            )
+        self.renderer_api.clear_all_packets()
+        self.renderer_api.clear_all_nodes()
+        self.renderer_api.clear_all_wirelesss_packets()
+        if self.data and self.data.content or self.use_database:
+            if self.use_database:
+                nodes = get_all_nodes()
+                self.database_length = get_steps_table_size()
+                if self.database_length != 0:
+                    self.database_iteration_len = self.database_length // self.batch_size
+                    self.database_remaining_len = self.database_length % self.batch_size
+                    self.control_update_callback(
+                        f"Step {self.current_step} / {self.database_length}",
+                        f"Time {0}",
+                        self.current_step,
+                        self.database_length,
+                    )
+            else:
+                nodes = get_objects_by_type(self.data.content, Node)
+                self.control_update_callback(
+                    f"Step {self.current_step} / {len(self.substeps)}",
+                    f"Time {0}",
+                    self.current_step,
+                    len(self.substeps),
+                )
             for node in nodes:
                 self.renderer_api.create_node(x=node.loc_x, y=node.loc_y, z=node.loc_z, id=node.id,
-                                              description="Node " + node.id)
+                                              description="Node " + str(node.id))
             self.renderer_api.renderer.GetRenderWindow().Render()
 
     def animate_substeps(self):
@@ -56,18 +82,26 @@ class AnimationApi:
         steps_executed = 0
         render_every_n_steps = 10  # Adjust this value based on your requirements
 
-        while self.current_step < len(self.substeps) and not self.is_paused:
+        while (self.current_step < len(self.substeps) or (self.use_database and self.current_step < self.database_length)) and not self.is_paused:
             step = self.substeps[self.current_step]
             self.handle_step(step)
             self.current_step += 1
 
             if self.control_update_callback:
-                self.control_update_callback(
-                    f"Step {self.current_step} / {len(self.substeps)}",
-                    f"Time {step.time}",
-                    self.current_step,
-                    len(self.substeps),
-                )
+                if self.use_database:
+                    self.control_update_callback(
+                        f"Step {self.current_step} / {self.database_length}",
+                        f"Time {step.time}",
+                        self.current_step,
+                        self.database_length,
+                    )
+                else:
+                    self.control_update_callback(
+                        f"Step {self.current_step} / {len(self.substeps)}",
+                        f"Time {step.time}",
+                        self.current_step,
+                        len(self.substeps),
+                    )
             if self.steps_update_callback:
                 self.steps_update_callback(self.current_step)
             if steps_executed % render_every_n_steps == 0:
@@ -78,7 +112,11 @@ class AnimationApi:
 
             if steps_executed >= self.steps_per_event:
                 break
-            if self.current_step == len(self.substeps):
+            if self.use_database and self.current_step >= self.batch_size * self.database_iteration_current and self.current_step != self.database_length:
+                # ziskaj aka je iteracia teraz
+                pass
+
+            elif self.current_step == len(self.substeps):
                 self.bottom_dock_widget.log("Animation finished.")
 
         self.start_timer()
@@ -94,19 +132,6 @@ class AnimationApi:
             case StepType.WIRELESS_PACKET_RECEPTION:
                 self.handle_wireless_packet_reception(step)
 
-    def handle_packet_step(self, step):
-        packet_id = step.packet_id
-        if step.step_number == 0:
-            x, y, z = step.loc_x, step.loc_y, step.loc_z
-            self.renderer_api.create_packet(x, y, z, packet_id=packet_id)
-        elif step.step_number == 19 and packet_id in self.renderer_api.packets:
-            if packet_id in self.renderer_api.packets:
-                self.renderer_api.remove_packet(packet_id)
-        # Update the position of the packet_object for intermediate steps
-        elif packet_id in self.renderer_api.packets:
-            x, y, z = step.loc_x, step.loc_y, step.loc_z
-            self.renderer_api.update_packet_position(packet_id, x, y, z)
-
     def handle_node_update(self, step):
         # Find the node_object with the matching ID
         node = get_rendering_node_by_id(self.renderer_api.nodes, step.node_id)
@@ -121,7 +146,7 @@ class AnimationApi:
             self.renderer_api.create_broadcaster_signal(signal_id=broadcast_id, x=x, y=y, z=z,
                                                         num_arcs=1, radius=step.radius, arc_thickness=0.5,
                                                         arc_resolution=50, normal=normal, direction=direction)
-        elif step.step_number == 11 and broadcast_id in self.renderer_api.signals:
+        elif step.step_number == self.transmission_max_step and broadcast_id in self.renderer_api.signals:
             if broadcast_id in self.renderer_api.signals:
                 self.renderer_api.remove_wifi_signal(broadcast_id)
         # Update the position of the packet_object for intermediate steps
@@ -131,48 +156,33 @@ class AnimationApi:
                                                         num_arcs=1, radius=step.radius, arc_thickness=0.5,
                                                         arc_resolution=50, normal=normal, direction=direction)
 
-    def handle_wireless_packet_reception(self, step):
-        wireless_packet_id = step.wireless_packet_id
+    def handle_packet_step(self, step):
+        packet_id = step.packet_id
         x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
-        target_x, target_y, target_z = float(step.broadcast_loc_x), float(step.broadcast_loc_y), float(
-            step.broadcast_loc_z)
-        # Calculate the direction vector
-        direction_vector = (target_x - x, target_y - y, target_z - z)
-
-        # Calculate the adjusted normal vector
-        adjusted_normal = np.cross(direction_vector, (0, 0, 1))
-
-        # Calculate the azimuth angle (angle in the X-Y plane) of the direction vector
-        azimuth_angle = np.arctan2(direction_vector[1], direction_vector[0]) * 180 / np.pi
-
-        # Calculate the elevation angle (angle from the X-Y plane) of the direction vector
-        elevation_angle = np.arctan2(direction_vector[2], np.linalg.norm(direction_vector[:2])) * 180 / np.pi
-
-        # Calculate the start and end angles for the arcs
-        start_angle_azimuth = azimuth_angle - 45
-        end_angle_azimuth = azimuth_angle + 45
-        start_angle_elevation = elevation_angle - 45
-        end_angle_elevation = elevation_angle + 45
-
         if step.step_number == 0:
-            self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius,
-                                                 start_angle_azimuth=start_angle_azimuth,
-                                                 end_angle_azimuth=end_angle_azimuth,
-                                                 start_angle_elevation=start_angle_elevation,
-                                                 end_angle_elevation=end_angle_elevation)
-        elif step.step_number == 8 and wireless_packet_id in self.renderer_api.signals:
-            if wireless_packet_id in self.renderer_api.signals:
-                self.renderer_api.remove_wifi_signal(wireless_packet_id)
+            self.renderer_api.create_packet(x, y, z, packet_id=packet_id)
+        elif step.step_number == self.wired_packet_max_step and packet_id in self.renderer_api.packets:
+            if packet_id in self.renderer_api.packets:
+                self.renderer_api.remove_packet(packet_id)
         # Update the position of the packet_object for intermediate steps
-        elif wireless_packet_id in self.renderer_api.signals:
-            self.renderer_api.remove_wifi_signal(wireless_packet_id)
-            self.renderer_api.create_wifi_signal(wireless_packet_id, x, y, z, 1,
-                                                 direction=direction_vector, normal=adjusted_normal, radius=step.radius,
-                                                 start_angle_azimuth=start_angle_azimuth,
-                                                 end_angle_azimuth=end_angle_azimuth,
-                                                 start_angle_elevation=start_angle_elevation,
-                                                 end_angle_elevation=end_angle_elevation)
+        elif packet_id in self.renderer_api.packets:
+            self.renderer_api.update_packet_position(packet_id, x, y, z)
+
+    def handle_wireless_packet_reception(self, step):
+        wireless_packet_id = step.packet_id
+        x, y, z = step.loc_x, step.loc_y, step.loc_z
+
+        # Add the wireless packet to the renderer for the first step
+        if step.step_number == 0:
+            self.renderer_api.create_wireless_packet(x, y, z, packet_id=wireless_packet_id)
+
+        # Remove the wireless packet from the renderer for the last step
+        elif step.step_number == self.wireless_packet_max_step and wireless_packet_id in self.renderer_api.wireless_packets:
+            self.renderer_api.remove_wireless_packet(wireless_packet_id)
+
+        # Update the position of the donut_object for intermediate steps
+        elif wireless_packet_id in self.renderer_api.wireless_packets:
+            self.renderer_api.update_wireless_packet_position(wireless_packet_id, x, y, z)
 
     def start_timer(self):
         self.timer_step.start(self.delay)
@@ -198,7 +208,6 @@ class AnimationApi:
 
     def reset_animation(self):
         self.current_step = 0
-        self.delay = 0
         self.steps_per_event = 1
         self.clear_vtk_window()
 
@@ -206,12 +215,12 @@ class AnimationApi:
         if len(self.substeps) == 0:
             substeps_size = 9999
             time = 0
+        elif len(self.substeps) == self.current_step:
+            substeps_size = len(self.substeps)
+            time = self.substeps[len(self.substeps) - 1].time
         else:
             substeps_size = len(self.substeps)
             time = self.substeps[self.current_step].time
-        self.renderer_api.clear_all_packets()
-        self.renderer_api.clear_all_nodes()
-        self.renderer_api.clear_all_signals()
         self.prepare_animation()
         if self.control_update_callback:
             self.control_update_callback(f"Step {self.current_step} / {len(self.substeps)}", f"Time {time}",
@@ -229,16 +238,47 @@ class AnimationApi:
     def set_current_step(self, new_step):
         self.current_step = new_step
         self.clear_vtk_window()
-        for i in range(new_step):
+
+        for i in range(0, new_step):
             if i < len(self.substeps):
                 step = self.substeps[i]
-                self.handle_step(step)
-        self.renderer_api.renderer.GetRenderWindow().Render()
+                match step.type:
+                    case StepType.WIRED_PACKET:
+                        if i >= (new_step - 100):
+                            self.handle_packet_step(step)
+                    case StepType.NODE_UPDATE:
+                        self.handle_node_update(step)
+                    case StepType.WIRELESS_PACKET_RECEPTION:
+                        if i >= (new_step - 100):
+                            self.handle_wireless_packet_reception(step)
 
     def set_max_steps_callback(self, callback):
         self.max_steps_callback = callback
+
+    def update_steps_constants(self, wired_packet_max_step, wireless_packet_max_step, transmission_max_step,
+                               use_database, animation_batch):
+        self.wired_packet_max_step = wired_packet_max_step - 1
+        self.wireless_packet_max_step = wireless_packet_max_step - 1
+        self.transmission_max_step = transmission_max_step - 1
+        self.use_database = use_database
+        self.animation_batch_database = animation_batch
 
     def set_substeps(self, substeps):
         self.substeps = substeps
         if self.max_steps_callback:
             self.max_steps_callback(len(self.substeps))
+
+    def calculate_requested_iteration(self, step):
+        # Check if the step is within the range of available steps in the database
+        if 0 <= step < self.database_length:
+            # Calculate the requested iteration
+            iteration_index = step // self.batch_size
+
+            # Calculate the step offset within the current iteration
+            step_offset = step % self.batch_size
+
+            return iteration_index, step_offset
+        else:
+            raise ValueError("Step is out of range")
+
+

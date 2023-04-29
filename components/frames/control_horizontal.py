@@ -2,8 +2,6 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QPushButton, QLabel, QHBoxLayout, QVBoxLayout, QFrame, QProgressBar
 
 
-
-
 class ControlHorizontal(QFrame):
     def __init__(self, vtk_api, animation_api, bottom_dock_widget, parent=None):
         super(ControlHorizontal, self).__init__(parent)
@@ -33,12 +31,22 @@ class ControlHorizontal(QFrame):
         button_layout.addWidget(self.reset_button)
         self.reset_button.clicked.connect(self.on_reset_button_clicked)
 
+        # Create QVBoxLayout for progress bar and its label
+        progress_layout = QVBoxLayout()
+
+        # Add label above progress bar
+        self.progress_bar_label = QLabel("Processing Progress:")
+        progress_layout.addWidget(self.progress_bar_label)
+
         # Add progress bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        button_layout.addWidget(self.progress_bar)
+        progress_layout.addWidget(self.progress_bar)
+
+        # Add progress layout to the button layout
+        main_layout.addLayout(progress_layout)
 
         # Move ground_object up button
         self.move_ground_up_button = QPushButton("Move Ground Up")

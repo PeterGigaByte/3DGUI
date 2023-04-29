@@ -46,9 +46,9 @@ def interpolate_coordinates_3D(src_coord, dst_coord, step, num_steps):
     x_dst, y_dst, z_dst = dst_coord
     fraction = step / (num_steps - 1)
 
-    x_step = x_src + fraction * (x_dst - x_src)
-    y_step = y_src + fraction * (y_dst - y_src)
-    z_step = z_src + fraction * (z_dst - z_src)
+    x_step = x_src + fraction * (x_dst - x_src) if x_src is not None and x_dst is not None else x_src
+    y_step = y_src + fraction * (y_dst - y_src) if y_src is not None and y_dst is not None else y_src
+    z_step = z_src + fraction * (z_dst - z_src) if z_src is not None and z_dst is not None else z_src
 
     return x_step, y_step, z_step
 
