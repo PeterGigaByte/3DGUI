@@ -47,7 +47,7 @@ class NodeUpdateStep(Step):
 
 class WirelessPacketReceptionStep(Step):
     def __init__(self, time, packet_id, from_id, to_id, first_byte_transmission_time, first_byte_received_time,
-                 step_number, loc_x, loc_y, loc_z):
+                 step_number, loc_x, loc_y, loc_z, meta_info):
         super().__init__(time, StepType.WIRELESS_PACKET_RECEPTION)
         self.packet_id = packet_id
         self.from_id = from_id
@@ -58,3 +58,4 @@ class WirelessPacketReceptionStep(Step):
         self.loc_x = loc_x
         self.loc_y = loc_y
         self.loc_z = loc_z if loc_z is not None else 0
+        self.meta_info = meta_info

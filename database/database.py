@@ -101,7 +101,8 @@ def create_tables(cursor, conn):
         fb_rx FLOAT,
         lb_rx FLOAT,
         fb_tx FLOAT,
-        f_id INTEGER
+        f_id INTEGER,
+        meta_info TEXT
     )
     '''
 
@@ -369,7 +370,8 @@ def update_wireless_packet_reception_fb_tx():
     update_query = '''
         UPDATE wireless_packet_reception
         SET fb_tx = broadcaster.fb_tx,
-            f_id = broadcaster.f_id
+            f_id = broadcaster.f_id,
+            meta_info = broadcaster.meta_info
         FROM broadcaster
         WHERE wireless_packet_reception.u_id = broadcaster.u_id
     '''
@@ -627,7 +629,7 @@ def get_all_wireless_packets():
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [WirelessPacketReception(row[0], row[1], row[2], row[3], row[4], row[5]) for row in result]
+    return [WirelessPacketReception(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in result]
 
 
 def get_wireless_packet_count():
@@ -768,7 +770,7 @@ def get_steps(batch_size, offset):
             step = WirelessPacketReceptionStep(
                 time=row[2], packet_id=row[3], from_id=row[4], to_id=row[5],
                 first_byte_transmission_time=row[6], first_byte_received_time=row[7],
-                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12]
+                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12], meta_info=row[8]
             )
 
         steps.append(step)
@@ -823,7 +825,7 @@ def fetch_data_from_database(iteration_index, batch_size):
             step = WirelessPacketReceptionStep(
                 time=row[2], packet_id=row[3], from_id=row[4], to_id=row[5],
                 first_byte_transmission_time=row[6], first_byte_received_time=row[7],
-                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12]
+                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12], meta_info=row[8]
             )
 
         steps.append(step)
@@ -874,7 +876,7 @@ def get_data_by_batch_size(batch_size):
             step = WirelessPacketReceptionStep(
                 time=row[2], packet_id=row[3], from_id=row[4], to_id=row[5],
                 first_byte_transmission_time=row[6], first_byte_received_time=row[7],
-                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12]
+                step_number=row[9], loc_x=row[10], loc_y=row[11], loc_z=row[12], meta_info=row[8]
             )
 
         steps.append(step)
@@ -901,7 +903,7 @@ def get_data(offset, batch_size):
         SELECT 2 AS step_type, t AS time, p AS node_update_type, id, color_r, color_g, color_b, width, height, coord_x, coord_y, coord_z, description, NULL AS from_id, NULL AS to_id, NULL AS fb_tx, NULL AS lb_tx, NULL AS fb_rx, NULL AS lb_rx
         FROM node_update
         UNION ALL
-        SELECT 3 AS step_type, fb_rx AS time, NULL AS node_update_type, u_id AS id, NULL AS color_r, NULL AS color_g, NULL AS color_b, NULL AS width, NULL AS height, NULL AS coord_x, NULL AS coord_y, NULL AS coord_z, NULL AS description, f_id AS from_id, t_id AS to_id, fb_tx, NULL AS lb_tx, fb_rx, lb_rx
+        SELECT 3 AS step_type, fb_rx AS time, NULL AS node_update_type, u_id AS id, NULL AS color_r, NULL AS color_g, meta_info, NULL AS width, NULL AS height, NULL AS coord_x, NULL AS coord_y, NULL AS coord_z, NULL AS description, f_id AS from_id, t_id AS to_id, fb_tx, NULL AS lb_tx, fb_rx, lb_rx
         FROM wireless_packet_reception
         UNION ALL
         SELECT 1 AS step_type, fb_rx AS time, NULL AS node_update_type, from_id AS id, NULL AS color_r, NULL AS color_g, NULL AS color_b, NULL AS width, NULL AS height, NULL AS coord_x, NULL AS coord_y, NULL AS coord_z, meta_info AS description, from_id, to_id, fb_tx, lb_tx, fb_rx, lb_rx
@@ -925,7 +927,7 @@ def get_data(offset, batch_size):
             obj = NodeUpdate(row[2], row[1], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
                              row[12])
         elif step_type == 3:
-            obj = WirelessPacketReception(row[3], row[14], row[17], row[18], row[15], row[13])
+            obj = WirelessPacketReception(row[3], row[14], row[17], row[18], row[15], row[13], row[6])
         elif step_type == 1:
             obj = WiredPacket(row[13], row[15], row[16], row[12], row[14], row[17], row[18])
         if obj is not None:

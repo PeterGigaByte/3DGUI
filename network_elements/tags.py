@@ -95,7 +95,7 @@ class PrTags:
     U_ID_TAG = 'uId'
     F_ID_TAG = 'fId'
     FB_TX_TAG = 'fbTx'
-    META_INFO_TAG = 'meta_info'
+    META_INFO_TAG = 'meta-info'
 
 
 class ResTags:

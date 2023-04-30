@@ -203,6 +203,8 @@ class AnimationApi:
         x, y, z = float(step.loc_x), float(step.loc_y), float(step.loc_z)
         if step.step_number == 0:
             self.renderer_api.create_packet(x, y, z, packet_id=packet_id)
+            if step.meta_info:
+                self.bottom_dock_widget.log(step.meta_info)
         elif step.step_number == self.wired_packet_max_step and packet_id in self.renderer_api.packets:
             if packet_id in self.renderer_api.packets:
                 self.renderer_api.remove_packet(packet_id)
@@ -217,7 +219,8 @@ class AnimationApi:
         # Add the wireless packet to the renderer for the first step
         if step.step_number == 0:
             self.renderer_api.create_wireless_packet(x, y, z, packet_id=wireless_packet_id)
-
+            if step.meta_info:
+                self.bottom_dock_widget.log(step.meta_info)
         # Remove the wireless packet from the renderer for the last step
         elif step.step_number == self.wireless_packet_max_step and wireless_packet_id in self.renderer_api.wireless_packets:
             self.renderer_api.remove_wireless_packet(wireless_packet_id)

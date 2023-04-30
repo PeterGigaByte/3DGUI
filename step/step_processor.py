@@ -221,7 +221,7 @@ class StepProcessor(QThread):
                 # Create a WiredPacketStep object for this substep
                 data = WirelessPacketReceptionStep(time_step, packet_id, from_id, to_id,
                                                    first_byte_transmission_time, first_byte_received_time,
-                                                   step, x, y, z)
+                                                   step, x, y, z, meta_info)
 
             # Append the WiredPacketStep object to the list of substeps
             if data.from_id != data.to_id and is_wired:
@@ -261,7 +261,7 @@ class StepProcessor(QThread):
                 # Create a WiredPacketStep object for this substep
                 data = WirelessPacketReceptionStep(time_step, packet_id, from_node.id, to_node.id,
                                                    float(start_time), float(end_time),
-                                                   step, x, y, z)
+                                                   step, x, y, z, meta_info)
 
             # Append the WiredPacketStep object to the list of substeps
             if data.from_id != data.to_id and is_wired:
@@ -370,7 +370,7 @@ class StepProcessor(QThread):
                 self.generate_wired_packet_substeps(self.num_steps_wireless_packet_reception,
                                                     data.first_byte_transmission_time,
                                                     data.first_byte_received_time, self.node_dict.get(data.from_id),
-                                                    self.node_dict.get(data.to_id))
+                                                    self.node_dict.get(data.to_id), data.meta_info)
 
     def merge_and_sort_data(self, node_updates, wireless_packets, wired_packets):
         # Merge all data into a single list
