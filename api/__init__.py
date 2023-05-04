@@ -1,1 +1,1 @@
-__all__ = ['parser', 'rendering']
+__all__ = ['rendering']

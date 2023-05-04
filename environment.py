@@ -17,7 +17,7 @@ from components.frames.control_horizontal import ControlHorizontal
 from components.frames.control_vertical import ControlVertical
 from components.tutorialPopUp import show_tutorial
 from convertors.json_convertor import xml_convert_to_json
-from database.database import get_steps, get_all_nodes, get_all_nonp2plinkproperties
+from database.database import get_steps, get_all_nodes, get_all_nonp2plinkproperties, save_to_database
 from interactors.interactors import CustomInteractorStyle, KeyPressInteractor
 from network_elements.elements import Node, NonP2pLinkProperties
 from parsers.json.json_parser import JsonParser
@@ -254,6 +254,7 @@ class Environment(QMainWindow):
             xml_convert_to_json(file_path)
 
     def reset_when_file_open(self):
+        save_to_database([])
         self.animation_api.substeps = []
         self.step_processor.substeps = self.step_processor.substeps = {step_type: [] for step_type in
                                                                        self.step_processor.step_types}

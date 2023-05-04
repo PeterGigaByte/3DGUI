@@ -14,6 +14,7 @@ db_path = "elements.db"
 def create_tables(cursor, conn):
     create_anim_table = '''
     CREATE TABLE IF NOT EXISTS anim (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         ver TEXT,
         file_type TEXT
     )
@@ -21,7 +22,7 @@ def create_tables(cursor, conn):
 
     create_node_table = '''
     CREATE TABLE IF NOT EXISTS node (
-        id INTEGER,
+        id INTEGER PRIMARY KEY,
         sys_id INTEGER,
         loc_x FLOAT,
         loc_y FLOAT,
@@ -31,9 +32,10 @@ def create_tables(cursor, conn):
 
     create_node_update_table = '''
     CREATE TABLE IF NOT EXISTS node_update (
+        update_id INTEGER PRIMARY KEY AUTOINCREMENT,
         p TEXT,
         t FLOAT,
-        id INTEGER,
+        id INTEGER REFERENCES node (id),
         color_r FLOAT,
         color_g FLOAT,
         color_b FLOAT,
@@ -48,7 +50,8 @@ def create_tables(cursor, conn):
 
     create_nonp2plinkproperties_table = '''
     CREATE TABLE IF NOT EXISTS nonp2plinkproperties (
-        id INTEGER,
+        id_nonp2plinkproperties INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER REFERENCES node (id),
         ip_address TEXT,
         channel_type TEXT
     )
@@ -56,6 +59,7 @@ def create_tables(cursor, conn):
 
     create_ip_table = '''
     CREATE TABLE IF NOT EXISTS ip (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         n INTEGER,
         address_id INTEGER
     )
@@ -63,6 +67,7 @@ def create_tables(cursor, conn):
 
     create_ipv6_table = '''
     CREATE TABLE IF NOT EXISTS ipv6 (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         n INTEGER,
         address_id INTEGER
     )
@@ -70,13 +75,15 @@ def create_tables(cursor, conn):
 
     create_address_table = '''
     CREATE TABLE IF NOT EXISTS address (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         ip_address TEXT
     )
     '''
 
     create_ncs_table = '''
     CREATE TABLE IF NOT EXISTS ncs (
-        nc_id INTEGER,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nc_id INTEGER REFERENCES node (id),
         n INTEGER,
         t FLOAT
     )
@@ -84,11 +91,12 @@ def create_tables(cursor, conn):
 
     create_wired_packet_table = '''
     CREATE TABLE IF NOT EXISTS wired_packet (
-        from_id INTEGER,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_id INTEGER REFERENCES node (id),
         fb_tx FLOAT,
         lb_tx FLOAT,
         meta_info TEXT,
-        to_id INTEGER,
+        to_id INTEGER REFERENCES node (id),
         fb_rx FLOAT,
         lb_rx FLOAT
     )
@@ -96,20 +104,21 @@ def create_tables(cursor, conn):
 
     create_wireless_packet_reception_table = '''
     CREATE TABLE IF NOT EXISTS wireless_packet_reception (
-        u_id INTEGER,
-        t_id INTEGER,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        u_id INTEGER REFERENCES node (id),
+        t_id INTEGER REFERENCES node (id),
         fb_rx FLOAT,
         lb_rx FLOAT,
         fb_tx FLOAT,
-        f_id INTEGER,
+        f_id INTEGER REFERENCES node (id),
         meta_info TEXT
     )
     '''
 
     create_broadcaster_table = '''
     CREATE TABLE IF NOT EXISTS broadcaster (
-        u_id INTEGER,
-        f_id INTEGER,
+        u_id INTEGER PRIMARY KEY,
+        f_id INTEGER REFERENCES node (id),
         fb_tx FLOAT,
         meta_info TEXT
     )
@@ -117,6 +126,7 @@ def create_tables(cursor, conn):
 
     create_resource_table = '''
     CREATE TABLE IF NOT EXISTS resource (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         rid INTEGER,
         p TEXT
     )
@@ -124,8 +134,9 @@ def create_tables(cursor, conn):
 
     create_link_table = '''
     CREATE TABLE IF NOT EXISTS link (
-        from_id INTEGER,
-        to_id INTEGER,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_id INTEGER REFERENCES node (id),
+        to_id INTEGER REFERENCES node (id),
         fd TEXT,
         td TEXT,
         ld TEXT
@@ -134,11 +145,11 @@ def create_tables(cursor, conn):
     create_steps_table = '''
       CREATE TABLE IF NOT EXISTS steps (
           step_id INTEGER PRIMARY KEY,
-          step_type INTEGER,
+          step_type INTEGER REFERENCES step_types (id),
           time FLOAT,
           packet_id INTEGER,
-          from_id INTEGER,
-          to_id INTEGER,
+          from_id INTEGER REFERENCES node (id),
+          to_id INTEGER REFERENCES node (id),
           first_byte_transmission_time FLOAT,
           first_byte_received_time FLOAT,
           meta_info TEXT,
@@ -153,7 +164,7 @@ def create_tables(cursor, conn):
           target_loc_y REAL,
           target_loc_z REAL,
           update_type TEXT,
-          node_id INTEGER,
+          node_id INTEGER REFERENCES node (id),
           description TEXT,
           red FLOAT,
           green FLOAT,
@@ -602,7 +613,7 @@ def get_all_node_updates():
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [NodeUpdate(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11])
+    return [NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
             for row in result]
 
 
@@ -629,7 +640,7 @@ def get_all_wireless_packets():
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [WirelessPacketReception(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in result]
+    return [WirelessPacketReception(row[1], row[2], row[3], row[4], row[5], row[6], row[7]) for row in result]
 
 
 def get_wireless_packet_count():
@@ -685,7 +696,7 @@ def get_wireless_packets_with_offset(offset, batch_size, node):
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [WirelessPacketReception(row[0], row[1], row[2], row[3]) for row in result]
+    return [WirelessPacketReception(row[1], row[2], row[3], row[4]) for row in result]
 
 
 def get_node_updates(offset, batch_size):
@@ -698,7 +709,7 @@ def get_node_updates(offset, batch_size):
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [NodeUpdate(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11])
+    return [NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
             for row in result]
 
 
@@ -712,7 +723,7 @@ def get_wireless_packets(offset, batch_size):
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [WiredPacket(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in result]
+    return [WiredPacket(row[1], row[2], row[3], row[4], row[5], row[6], row[7]) for row in result]
 
 
 def get_wired_packets(offset, batch_size):
@@ -725,7 +736,7 @@ def get_wired_packets(offset, batch_size):
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [WirelessPacketReception(row[0], row[1], row[2], row[3], row[4], row[5]) for row in result]
+    return [WirelessPacketReception(row[1], row[2], row[3], row[4], row[5], row[6]) for row in result]
 
 
 def get_steps(batch_size, offset):
@@ -993,4 +1004,4 @@ def get_all_nonp2plinkproperties():
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [NonP2pLinkProperties(row[0], row[1], row[2]) for row in result]
+    return [NonP2pLinkProperties(row[1], row[2], row[3]) for row in result]

@@ -1,6 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 
-from PyQt5.QtCore import QObject, QThread
+from PyQt5.QtCore import QThread
 from lxml import etree
 
 from database.database import process_batch, remove_database
@@ -128,7 +128,6 @@ class ElementTreeXmlParser(QThread):
         event, root = next(context)
 
         self.anim = parse_tag(root)
-        anim_content = []
 
         self.none_type = 0
         batch = []
@@ -158,7 +157,6 @@ class ElementTreeXmlParser(QThread):
             if batch:
                 process_batch(batch)
 
-        self.anim.content = anim_content
-
+        self.anim = None
         self.bottom_dock_widget.log(f'NoneType tags : {self.none_type}')
         self.bottom_dock_widget.log('Xml TreeElement parser end.')
