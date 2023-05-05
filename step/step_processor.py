@@ -1,7 +1,6 @@
 import copy
 import copy
 import datetime
-import gc
 import time
 import uuid
 
@@ -191,47 +190,13 @@ class StepProcessor(QThread):
             # Delay for the duration of a step
             time.sleep(step_duration.total_seconds())
 
-    def generate_wired_packet_substeps_optimised(self, num_steps, first_byte_transmission_time,
-                                                 first_byte_received_time, latest_position_1, latest_position_2,
-                                                 meta_info, from_id, to_id, is_wired=False):
-        # Generate a unique packet_object ID
-        packet_id = uuid.uuid4()
-
-        # Calculate the total time difference between transmission and reception
-        time_difference = float(first_byte_received_time) - float(first_byte_transmission_time)
-
-        # Loop through the number of steps specified
-        for step in range(num_steps):
-
-            # Calculate the time step based on the transmission and reception times
-            time_step = float(first_byte_transmission_time) + (
-                    step * time_difference / (num_steps - 1))
-            src_x, src_y, src_z = latest_position_1
-            dst_x, dst_y, dst_z = latest_position_2
-            # Interpolate the 3D coordinates between the source and destination nodes
-            x, y, z = interpolate_coordinates_3D((float(src_x), float(src_y), float(src_z)),
-                                                 (float(dst_x), float(dst_y), float(dst_z)), step, num_steps)
-
-            if is_wired:
-                # Create a WiredPacketStep object for this substep
-                data = WiredPacketStep(time_step, packet_id, from_id, to_id,
-                                       first_byte_transmission_time, first_byte_received_time,
-                                       meta_info, step, x, y, z)
-            else:
-                # Create a WiredPacketStep object for this substep
-                data = WirelessPacketReceptionStep(time_step, packet_id, from_id, to_id,
-                                                   first_byte_transmission_time, first_byte_received_time,
-                                                   step, x, y, z, meta_info)
-
-            # Append the WiredPacketStep object to the list of substeps
-            if data.from_id != data.to_id and is_wired:
-                self.substeps[StepType.WIRED_PACKET].append(data)
-            elif data.from_id != data.to_id:
-                self.substeps[StepType.WIRELESS_PACKET_RECEPTION].append(data)
-
     def generate_wired_packet_substeps(self, num_steps, start_time,
                                        end_time, from_node, to_node, meta_info="",
                                        is_wired=False):
+        if to_node is None:
+            to_id = -1
+        else:
+            to_id = to_node.id
         # Generate a unique packet_object ID
         packet_id = uuid.uuid4()
 
@@ -246,7 +211,12 @@ class StepProcessor(QThread):
 
             # Get the source and destination node coordinates at the current time step
             src_x, src_y, src_z = (from_node.loc_x, from_node.loc_y, from_node.loc_z)
-            dst_x, dst_y, dst_z = (to_node.loc_x, to_node.loc_y, to_node.loc_z)
+
+            if to_node is None:
+                drop_packet_constant = (5 * step)
+                dst_x, dst_y, dst_z = (src_x + drop_packet_constant, src_y + drop_packet_constant, src_z + drop_packet_constant)
+            else:
+                dst_x, dst_y, dst_z = (to_node.loc_x, to_node.loc_y, to_node.loc_z)
 
             # Interpolate the 3D coordinates between the source and destination nodes
             x, y, z = interpolate_coordinates_3D((float(src_x), float(src_y), float(src_z)),
@@ -254,12 +224,12 @@ class StepProcessor(QThread):
 
             if is_wired:
                 # Create a WiredPacketStep object for this substep
-                data = WiredPacketStep(time_step, packet_id, from_node.id, to_node.id,
+                data = WiredPacketStep(time_step, packet_id, from_node.id, to_id,
                                        float(start_time), float(end_time),
                                        meta_info, step, x, y, z)
             else:
                 # Create a WiredPacketStep object for this substep
-                data = WirelessPacketReceptionStep(time_step, packet_id, from_node.id, to_node.id,
+                data = WirelessPacketReceptionStep(time_step, packet_id, from_node.id, to_id,
                                                    float(start_time), float(end_time),
                                                    step, x, y, z, meta_info)
 
@@ -290,7 +260,8 @@ class StepProcessor(QThread):
         # Append the NodeUpdateStep object to the list of substeps
         self.substeps[StepType.NODE_UPDATE].append(node_update)
 
-    def update_constants(self, batch_size, database_batch_size, num_steps_wired_packet_animation, num_steps_broadcast_transmission,
+    def update_constants(self, batch_size, database_batch_size, num_steps_wired_packet_animation,
+                         num_steps_broadcast_transmission,
                          num_steps_wireless_packet_reception, radius_constant, end_time_constant, optimized_parser):
         self.batch_size = batch_size
         self.database_batch_size = database_batch_size
@@ -300,29 +271,6 @@ class StepProcessor(QThread):
         self.radius_constant = radius_constant
         self.end_time_constant = end_time_constant
         self.optimized_parser = optimized_parser
-
-    def get_updated_node_coordinates_by_id(self, updated_node_data, node_id, time_t):
-        # Find the node with the matching ID in updated_node_data
-        node = next((node for node in updated_node_data if node.id == node_id), None)
-
-        if node:
-            # Find the latest NodeUpdateStep for the node up to the specified time
-            node_updates = [step for step in self.substeps[StepType.NODE_UPDATE] if
-                            step.node_id == node_id and step.time <= time_t]
-            if node_updates:
-                # Find the latest update with x, y, and z not None
-                latest_update = None
-                for update in node_updates:  # Remove the 'sorted' function and iterate in the original order
-                    if update.loc_x is not None and update.loc_y is not None and update.loc_z is not None:
-                        latest_update = update
-                        # No need for 'break', continue iterating to find the latest update in the original order
-
-                if latest_update:
-                    return latest_update.loc_x, latest_update.loc_y, latest_update.loc_z
-                else:
-                    # If no updates with x, y, and z not None are found, return the initial node coordinates
-                    return node.loc_x, node.loc_y, node.loc_z
-        return None, None, None
 
     def process_node_update(self):
         self.bottom_dock_widget.log("Process of nodes update started.")
@@ -334,27 +282,6 @@ class StepProcessor(QThread):
         update_wireless_packet_reception_fb_tx()
         self.bottom_dock_widget.log("Process of updating wireless packet reception ended.")
 
-    def process_item(self, item, step_type_param):
-        self.bottom_dock_widget.log("Processing of item start")
-        latest_position_1, latest_position_2 = (1, 1, 1), (2, 2, 2)
-        if step_type_param == StepType.WIRED_PACKET:
-            is_wired = True
-        else:
-            is_wired = False
-        self.substeps = {step_type: [] for step_type in self.step_types}
-        self.generate_wired_packet_substeps_optimised(self.num_steps_wired_packet_animation,
-                                                      item.first_byte_transmission_time,
-                                                      item.first_byte_received_time, latest_position_1,
-                                                      latest_position_2,
-                                                      item.meta_info, item.from_id, item.to_id,
-                                                      is_wired)
-        if step_type_param == StepType.WIRED_PACKET:
-            substeps = self.substeps[StepType.WIRED_PACKET]
-        else:
-            substeps = self.substeps[StepType.WIRELESS_PACKET_RECEPTION]
-        self.substeps = {step_type: [] for step_type in self.step_types}
-        self.bottom_dock_widget.log(f"Processing of item end {self.substeps[StepType.WIRED_PACKET]}")
-        return substeps
 
     def process_data(self, data):
         match data:
@@ -372,19 +299,6 @@ class StepProcessor(QThread):
                                                     data.first_byte_received_time, self.node_dict.get(data.from_id),
                                                     self.node_dict.get(data.to_id), data.meta_info)
 
-    def merge_and_sort_data(self, node_updates, wireless_packets, wired_packets):
-        # Merge all data into a single list
-        merged_data = node_updates + wireless_packets + wired_packets
-
-        sorted_data = sorted(merged_data, key=sorting_key)
-
-        # Clear original memory usage
-        del node_updates[:]
-        del wireless_packets[:]
-        del wired_packets[:]
-        gc.collect()
-
-        return sorted_data
 
     def process_optimised_data(self):
         self.node_dict = {node.id: node for node in get_all_nodes()}
