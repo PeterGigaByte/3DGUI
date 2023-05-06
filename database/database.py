@@ -196,6 +196,7 @@ def create_tables(cursor, conn):
     cursor.execute(create_steps_table)
     cursor.execute(create_step_types_query)
     insert_initial_step_types(conn, cursor)
+    create_indexes(cursor)
 
 
 def save_to_database(batch):
@@ -204,6 +205,8 @@ def save_to_database(batch):
 
     # Create a cursor object to interact with the database
     cursor = conn.cursor()
+
+    set_page_size(cursor)
 
     # Create tables in the database if they don't exist
     create_tables(cursor, conn)
@@ -441,6 +444,9 @@ def insert_steps_to_database(data, step_type, database_batch_size):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
+    cursor.execute("PRAGMA synchronous = OFF")
+    cursor.execute("PRAGMA journal_mode = MEMORY")
+
     query = '''
         INSERT INTO steps (
             step_type, time, packet_id, from_id, to_id,
@@ -613,8 +619,9 @@ def get_all_node_updates():
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
-            for row in result]
+    return [
+        NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
+        for row in result]
 
 
 def get_all_wired_packets():
@@ -709,8 +716,9 @@ def get_node_updates(offset, batch_size):
     result = cursor.fetchall()
     cursor.close()
     conn.close()
-    return [NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
-            for row in result]
+    return [
+        NodeUpdate(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
+        for row in result]
 
 
 def get_wireless_packets(offset, batch_size):
@@ -1005,3 +1013,14 @@ def get_all_nonp2plinkproperties():
     cursor.close()
     conn.close()
     return [NonP2pLinkProperties(row[1], row[2], row[3]) for row in result]
+
+
+def set_page_size(cursor):
+    cursor.execute("PRAGMA page_size = 16384")
+
+
+def create_indexes(cursor):
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_node_update_time ON node_update (t)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_wired_packet_fb_rx ON wired_packet (fb_rx)')
+    cursor.execute(
+        'CREATE INDEX IF NOT EXISTS idx_wireless_packet_reception_fb_rx ON wireless_packet_reception (fb_rx)')

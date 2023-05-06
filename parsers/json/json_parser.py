@@ -1,7 +1,7 @@
 import json
 
 from PyQt5.QtCore import QThread, pyqtSignal
-from memory_profiler import profile
+
 
 from network_elements.elements import Anim, Address, Node, NodeUpdate, NonP2pLinkProperties, Ip, IpV6, WiredPacket, Ncs, \
     Link, Resource, WirelessPacketReception, Broadcaster

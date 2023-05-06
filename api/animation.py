@@ -335,7 +335,7 @@ class AnimationApi:
     def set_substeps(self, substeps):
         self.substeps = substeps
         if self.max_steps_callback:
-            if self.use_database and self.database_length < 5000000:
+            if self.use_database:
                 self.max_steps_callback(self.database_length)
             else:
                 self.max_steps_callback(len(self.substeps))
